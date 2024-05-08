@@ -8,4 +8,5 @@ fn main() {
     let finished_url: String = format!("{}{}", url, url_ending);
 
     scraper::get_anime_episodes(finished_url);
+    let _ = scraper::main();
 }

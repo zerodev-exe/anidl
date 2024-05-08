@@ -11,11 +11,10 @@ use std::fs::File;
 use std::io::copy;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Specify a vector of URLs of the files you want to download
     let urls = vec![
-        "https://example.com/path/to/file1.txt",
-        "https://example.com/path/to/file2.txt",
+        "https://github.com/zerodev-exe/anidl/new/master?filename=.github%2Fworkflows%2Frust.yml&workflow_template=ci%2Frust",
         // Add more URLs as needed
     ];
 
@@ -31,7 +30,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             // Extract the file name from the URL and use it to create a local file path
             let file_name = url.split('/').last().unwrap_or("unknown_file");
-            let local_file_path = format!("path/to/save/{}", file_name);
+            let local_file_path = format!("Anime/{}", file_name);
 
             // Create a new file or truncate an existing file
             let mut file = File::create(&local_file_path)?;
