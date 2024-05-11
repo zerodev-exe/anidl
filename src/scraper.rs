@@ -6,42 +6,21 @@ pub fn get_anime_episodes(url: String) {
 // NOTE: BEGINING OF THE FILE DOWNLOAD PART
 // =======================================================================
 
-use reqwest;
-use std::fs::File;
-use std::io::copy;
-
 #[tokio::main]
 pub async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Specify a vector of URLs of the files you want to download
-    let urls = vec![
-        "https://github.com/zerodev-exe/anidl/new/master?filename=.github%2Fworkflows%2Frust.yml&workflow_template=ci%2Frust",
-        // Add more URLs as needed
-    ];
+    let urls: Vec<&str> = vec![];
 
     // Iterate through each URL in the vector
     for url in urls {
-        // Send an HTTP GET request to the URL
-        let response = reqwest::get(url).await?;
+        use download_rs::sync_download::Download;
 
-        // Check if the request was successful (status code 200 OK)
-        if response.status().is_success() {
-            // Get the file content as a byte stream
-            let content = response.bytes().await?;
+        let filename = "download/";
+        let download = Download::new(url, Some(filename), None);
 
-            // Extract the file name from the URL and use it to create a local file path
-            let file_name = url.split('/').last().unwrap_or("unknown_file");
-            let local_file_path = format!("Anime/{}", file_name);
-
-            // Create a new file or truncate an existing file
-            let mut file = File::create(&local_file_path)?;
-
-            // Write the downloaded content to the local file
-            copy(&mut content.as_ref(), &mut file)?;
-
-            println!("File downloaded successfully to: {}", local_file_path);
-        } else {
-            // Print an error message if the request was not successful
-            eprintln!("Error: {} for URL: {}", response.status(), url);
+        match download.download() {
+            Ok(_) => println!("Download has been completed for : {}", url),
+            Err(e) => println!("There was an error while downloading : {}", e.to_string()),
         }
     }
 
