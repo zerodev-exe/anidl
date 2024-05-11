@@ -33,6 +33,7 @@ mod tests {
 
         assert_eq!(trim(input1), input2);
     }
+
     #[test]
     fn check_no_spaces() {
         let input = String::from("test");
