@@ -1,3 +1,6 @@
+use downloady::download;
+
+mod downloady;
 mod input_handler;
 mod scraper;
 
@@ -7,6 +10,6 @@ fn main() {
 
     let finished_url: String = format!("{}{}", url, url_ending);
 
-    scraper::get_anime_episodes(finished_url);
-    let _ = scraper::main();
+    let scraped = scraper::get_anime_episodes(&finished_url);
+    let _ = download(scraped);
 }
