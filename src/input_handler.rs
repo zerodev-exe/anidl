@@ -1,14 +1,16 @@
 use std::io;
 
-pub fn main() -> String {
+pub fn init_input() -> String {
     // Read input from the user
     let mut input = String::new();
-    println!("Enter a string: ");
+    println!("Enter the name of the anime you wish to download");
     io::stdin()
         .read_line(&mut input)
         .expect("Failed to read line");
 
-    trim(input)
+    let begin = trim(input);
+
+    return "/search.html?keyword=".to_string() + &begin;
 }
 
 fn trim(input: String) -> String {
@@ -39,4 +41,20 @@ mod tests {
         let input = String::from("test");
         assert_eq!(input, trim(input.clone()));
     }
+}
+
+pub fn number_parser() -> i32 {
+    // Read input from the user
+    let mut input = String::new();
+    println!("Enter the number of the anime");
+    io::stdin()
+        .read_line(&mut input)
+        .expect("Failed to read line");
+
+    let my_num: i32 = input
+        .trim()
+        .parse()
+        .expect("please give me correct string number!");
+
+    return my_num;
 }
