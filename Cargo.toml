@@ -6,10 +6,14 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-curl = "0.4.46"
 download_rs = {version="0.2.0",features=["sync_download"]}
-hyper = "1.3.1"
-reqwest = "0.12.4"
-scraper = "0.18.1"
+error-chain = "0.12.4"
+select = "0.6.0"
 tokio = { version = "1", features = ["full"] }
-ureq = "2.9.7"
+reqwest = { version = "0.12.4", features = ["blocking"] }
+html_parser = "0.7.0"
+mlscraper-rust = "0.1.2"
+nipper = "0.1.9"
+scraper = "0.5"
+tendril = "0.4.3"
+colored = "2.1.0"
