@@ -3,7 +3,7 @@ pub async fn download(urls: Vec<&str>) -> Result<(), Box<dyn std::error::Error>>
     for url in urls {
         use download_rs::sync_download::Download;
 
-        let filename = "download/";
+        let filename = "Anime/";
         let download = Download::new(url, Some(filename), None);
 
         match download.download() {
