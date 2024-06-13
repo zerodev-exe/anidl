@@ -2,17 +2,36 @@ use colored::*;
 use select::document::Document;
 use select::predicate::{Attr, Name, Predicate};
 
-use crate::http;
+static URL: &str = " https://anitaku.so";
 
-pub fn get_anime_episodes(anime_url_ending: &str) -> &str {
-    anime_url_ending
+pub async fn get_anime_episodes(anime_url_ending: String) -> Vec<String> {
+    let mut episode_number = 1;
+    let episode_string = "episode";
+    let mut episode_vec:Vec<String> = vec![];
+
+    loop {
+        let episode_url = format!(
+            "{}/{}-{}-{}",
+            URL, anime_url_ending, episode_string, episode_number
+        );
+
+        let response = reqwest::get(&episode_url).await.unwrap();
+        if response.status() != reqwest::StatusCode::OK{
+            break;
+        }
+
+        println!("{}", episode_url);
+        episode_vec.push(episode_url.clone());
+        episode_number += 1;
+    }
+
+    return episode_vec;
+
 }
 
-pub async fn get_anime_url(url: &str) -> Vec<String> {
+pub async fn get_anime_url(body: String) -> Vec<String> {
     let mut anime_list: Vec<_> = vec![];
     let mut number_list = 0;
-
-    let body = http::get_html(url.to_string()).await;
 
     let document = Document::from(body.as_str());
     for node in document.find(Attr("class", "name").descendant(Name("a"))) {
@@ -30,13 +49,9 @@ pub async fn get_anime_url(url: &str) -> Vec<String> {
 
 pub async fn get_anime_name(body: String) -> Vec<String> {
     let mut anime_list: Vec<_> = vec![];
-    let mut number_list = 0;
 
     let document = Document::from(body.as_str());
     for node in document.find(Attr("class", "name").descendant(Name("a"))) {
-        number_list += 1;
-        let num = format!("[{}]", number_list);
-        println!("{} - {}", num.red(), node.text());
         anime_list.push(node.text());
     }
 

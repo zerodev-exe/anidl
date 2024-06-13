@@ -16,10 +16,19 @@ async fn main() {
 
     // anime_episodes.push(scraper::get_anime_episodes(URL));
 
-    let anime_url = scraper::get_anime_url(temp_url).await;
+    let body = http::get_html(temp_url.to_string()).await;
+
+    let anime_url = scraper::get_anime_url(body.clone()).await;
 
     let chosen_anime = input_handler::number_parser();
 
     let anime_url_ending = anime_url[chosen_anime - 1].clone();
     println!("{}", anime_url_ending);
+    let anime_name = scraper::get_anime_name(body).await;
+    let path = anime_name[chosen_anime - 1].clone();
+    println!("{}", path);
+
+    let episode_vec = scraper::get_anime_episodes(anime_url_ending).await;
+
+
 }
