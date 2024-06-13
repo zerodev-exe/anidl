@@ -1,9 +1,9 @@
-use input_handler::number_parser;
-
-mod downloady;
+mod download;
 mod http;
 mod input_handler;
 mod scraper;
+
+static URL: &str = " https://anitaku.so";
 
 #[tokio::main]
 async fn main() {
@@ -18,7 +18,8 @@ async fn main() {
 
     let anime_url = scraper::get_anime_url(temp_url).await;
 
-    let chosen_anime = number_parser();
+    let chosen_anime = input_handler::number_parser();
 
-    println!("{}", anime_url[2].clone());
+    let anime_url_ending = anime_url[chosen_anime - 1].clone();
+    println!("{}", anime_url_ending);
 }

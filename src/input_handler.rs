@@ -1,9 +1,11 @@
+use colored::*;
 use std::io;
 
 pub fn init_input() -> String {
     // Read input from the user
     let mut input = String::new();
-    println!("Enter the name of the anime you wish to download");
+    let output = "Enter the name of the anime you wish to download".green();
+    println!("{}", output);
     io::stdin()
         .read_line(&mut input)
         .expect("Failed to read line");
@@ -43,15 +45,16 @@ mod tests {
     }
 }
 
-pub fn number_parser() -> i32 {
+pub fn number_parser() -> usize {
     // Read input from the user
     let mut input = String::new();
-    println!("Enter the number of the anime");
+    let output = "Enter the number of the anime".green();
+    println!("{}", output);
     io::stdin()
         .read_line(&mut input)
         .expect("Failed to read line");
 
-    let my_num: i32 = input
+    let my_num: usize = input
         .trim()
         .parse()
         .expect("please give me correct string number!");
