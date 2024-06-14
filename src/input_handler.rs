@@ -4,7 +4,7 @@ use std::io;
 pub fn init_input() -> String {
     // Read input from the user
     let mut input = String::new();
-    let output = "Enter the name of the anime you wish to download".green();
+    let output = "Enter the name of the anime you wish to download :".green();
     println!("{}", output);
     io::stdin()
         .read_line(&mut input)
@@ -48,7 +48,7 @@ mod tests {
 pub fn number_parser() -> usize {
     // Read input from the user
     let mut input = String::new();
-    let output = "Enter the number of the anime".green();
+    let output = "Enter the number of the anime :".green();
     println!("{}", output);
     io::stdin()
         .read_line(&mut input)
