@@ -1,12 +1,9 @@
 use indicatif::{ProgressBar, ProgressStyle};
 use reqwest::Url;
 use std::fs::File;
-use std::io::{self, copy, Write};
+use std::io::Write;
 
-pub async fn download_file(
-    url: String,
-    file_path: String,
-)  {
+pub async fn download_file(url: String, file_path: &str, anime_episode: i32) {
     let response = reqwest::get(Url::parse(&url).unwrap()).await.unwrap();
     let total_size = response
         .content_length()
@@ -18,9 +15,12 @@ pub async fn download_file(
         .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})").unwrap()
         .progress_chars("#>-"));
 
-    std::fs::create_dir_all("Anime/").unwrap();
+    let episode_number = format!("EP-{:03}.mp4", anime_episode);
+    let full_file_path = format!("Anime/{}/{}", file_path, episode_number);
+    let full_path = format!("Anime/{}/", file_path);
 
-    let mut dest = File::create("Anime/".to_string() + &file_path).unwrap();
+    std::fs::create_dir_all(full_path).unwrap();
+    let mut dest = File::create(full_file_path).unwrap();
     let content = response.bytes().await.unwrap();
 
     let mut pos = 0;
