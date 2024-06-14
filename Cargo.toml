@@ -11,3 +11,4 @@ select = "0.6.0"
 tokio = { version = "1", features = ["full"] }
 reqwest = { version = "0.12.4", features = ["blocking"] }
 colored = "2.1.0"
+indicatif = "0.17.8"

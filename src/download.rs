@@ -1,12 +1,29 @@
-use download_rs::async_download::Download;
+use reqwest::Url;
+use std::fs::File;
+use std::io::{self, Write, copy};
+use indicatif::{ProgressBar, ProgressStyle};
 
-async fn main(url: &str, path: &str) {
-    let anime_path = "Anime/";
-    let filename = format!("{}{}", anime_path, path);
+pub async fn download_file(url: String, file_path: String) -> Result<(), Box<dyn std::error::Error>> {
+    let response = reqwest::get(Url::parse(&url)?).await?;
+    let total_size = response.content_length().ok_or("Failed to get content length")?;
 
-    let download = Download::new(url, Some(&filename), None);
-    match download.download_async().await {
-        Ok(_) => println!("下载完成"),
-        Err(e) => println!("下载出错 ： {}", e.to_string()),
+    let pb = ProgressBar::new(total_size);
+    pb.set_style(ProgressStyle::default_bar()
+        .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})")?
+        .progress_chars("#>-"));
+
+    let mut dest = File::create("Anime/".to_string() + &file_path)?;
+    let mut content = response.bytes().await?;
+
+    let mut pos = 0;
+    while pos < content.len() {
+        let chunk_size = std::cmp::min(8192, content.len() - pos);
+        let chunk = &content[pos..pos + chunk_size];
+        dest.write_all(chunk)?;
+        pb.inc(chunk.len() as u64);
+        pos += chunk_size;
     }
+
+    pb.finish_with_message("download completed");
+    Ok(())
 }

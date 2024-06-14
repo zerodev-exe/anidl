@@ -22,13 +22,25 @@ async fn main() {
 
     let chosen_anime = input_handler::number_parser();
 
+    // ==============================
+
+    let test_variable = "https://ewaezdrdab.bd36019.com/user1342/dbd107da0b94cfb05ec92bec5860c185/EP.11.v1.1718302504.1080p.mp4?token=ETfFvPWmpjxA5hPoAjzG7g&expires=1718336640&id=226919&title=(1920x1080-gogoanime)wind-breaker-episode-11.mp4".to_string();
+    println!("{}", test_variable);
+
+    let _ =
+        download::download_file(test_variable, "EP.11.v1.1718302504.1080p.mp4".to_string()).await;
+
+    // ==============================
+
     let anime_url_ending = anime_url[chosen_anime - 1].clone();
     println!("{}", anime_url_ending);
+
     let anime_name = scraper::get_anime_name(body).await;
     let path = anime_name[chosen_anime - 1].clone();
     println!("{}", path);
 
     let episode_vec = scraper::get_anime_episodes(anime_url_ending).await;
-
-
+    for episode in episode_vec.iter() {
+        println!("Episode URL: {}", episode);
+    }
 }
