@@ -53,7 +53,7 @@ pub async fn get_anime_episodes(anime_url_ending: String, path: &str) -> Vec<Str
         .await
         .unwrap();
 
-    let mut episode_number = 1;
+    let mut episode_number:u32 = 1;
     let episode_string = "episode";
     let mut episode_vec: Vec<String> = vec![];
 
@@ -82,8 +82,9 @@ pub async fn get_anime_episodes(anime_url_ending: String, path: &str) -> Vec<Str
         let encoded_url = video_urls.last().unwrap();
         println!("Encoded URL: {}", encoded_url);
 
-        let video_url = http::handle_redirect(&encoded_url).await.unwrap();
-        download::download_file(video_url.clone(), &path, episode_number).await;
+        // let video_url = http::handle_redirect(&encoded_url).await.unwrap();
+        let video_url = http::handle_redirect_and_download(&encoded_url, path, episode_number).await.unwrap();
+        // download::download_file(video_url.clone(), &path, episode_number).await;
         println!("{}", episode_url);
 
         episode_vec.push(episode_url.clone());

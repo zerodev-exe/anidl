@@ -34,3 +34,4 @@ pub async fn download_file(url: String, file_path: &str, anime_episode: i32) {
 
     pb.finish_with_message("download completed");
 }
+
