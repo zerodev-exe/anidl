@@ -1,16 +1,24 @@
 mod download;
 mod http;
 mod input_handler;
+mod logik;
 mod scraper;
 
-static URL: &str = " https://anitaku.so";
+static URL: &str = " https://anitaku.so/search.html?keyword=";
 
 #[tokio::main]
 async fn main() {
-    let url_ending = input_handler::init_input();
+    let args: Vec<String> = std::env::args().collect();
+    let url_ending = if args.len() > 1 {
+        input_handler::trim(args[1].clone())
+    } else {
+        input_handler::init_input()
+    };
     let scraper_url_base: String = format!("{}{}", URL, url_ending);
 
-    let body = http::get_html(scraper_url_base.to_string()).await;
+    let body = http::get_html(scraper_url_base.to_string())
+        .await
+        .expect("Your request didn't work");
 
     let anime_url = scraper::get_anime_url(body.clone()).await;
 
@@ -22,5 +30,5 @@ async fn main() {
     let anime_name = scraper::get_anime_name(body).await;
     let path = anime_name[chosen_anime - 1].clone();
 
-    let _ = scraper::get_anime_episodes(anime_url_ending, &path).await;
+    logik::get_anime_episodes(anime_url_ending, &path).await;
 }

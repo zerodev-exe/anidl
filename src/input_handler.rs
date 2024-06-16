@@ -12,10 +12,10 @@ pub fn init_input() -> String {
 
     let begin = trim(input);
 
-    return "/search.html?keyword=".to_string() + &begin;
+    return begin;
 }
 
-fn trim(input: String) -> String {
+pub fn trim(input: String) -> String {
     // Trim whitespace from the input
     let trimmed_input = input.trim();
 
@@ -25,6 +25,24 @@ fn trim(input: String) -> String {
     // Print the result
     return replaced_input;
 }
+
+pub fn number_parser() -> usize {
+    // Read input from the user
+    let mut input = String::new();
+    let output = "Enter the number of the anime :".green();
+    println!("{}", output);
+    io::stdin()
+        .read_line(&mut input)
+        .expect("Failed to read line");
+
+    let my_num: usize = input
+        .trim()
+        .parse()
+        .expect("please give me correct string number!");
+
+    return my_num;
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -43,21 +61,4 @@ mod tests {
         let input = String::from("test");
         assert_eq!(input, trim(input.clone()));
     }
-}
-
-pub fn number_parser() -> usize {
-    // Read input from the user
-    let mut input = String::new();
-    let output = "Enter the number of the anime :".green();
-    println!("{}", output);
-    io::stdin()
-        .read_line(&mut input)
-        .expect("Failed to read line");
-
-    let my_num: usize = input
-        .trim()
-        .parse()
-        .expect("please give me correct string number!");
-
-    return my_num;
 }
