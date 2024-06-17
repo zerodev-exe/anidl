@@ -17,13 +17,7 @@ pub fn init_input() -> String {
 
 pub fn trim(input: String) -> String {
     // Trim whitespace from the input
-    let trimmed_input = input.trim();
-
-    // Replace spaces with "%20"
-    let replaced_input = trimmed_input.replace(" ", "%20");
-
-    // Print the result
-    return replaced_input;
+    return input.trim().replace(" ", "%20");
 }
 
 pub fn number_parser() -> usize {

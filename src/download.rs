@@ -1,6 +1,18 @@
 use colored::Colorize;
 use std::fs::File;
 
+async fn create_dir_and_file(full_path: &str, full_file_path: &str) {
+    std::fs::create_dir_all(full_path).unwrap();
+    File::create(full_file_path).unwrap();
+}
+
+async fn download_content(client: &reqwest::Client, url: &str, full_file_path: &str) -> Result<(), reqwest::Error> {
+    let response = client.get(url).send().await?;
+    let content = response.bytes().await?;
+    tokio::fs::write(full_file_path, content).await.unwrap();
+    Ok(())
+}
+
 pub async fn handle_redirect_and_download(
     url: &str,
     file_path: &str,
@@ -17,8 +29,7 @@ pub async fn handle_redirect_and_download(
     let full_file_path = format!("Anime/{}/{}", file_path, anime_episode);
     let full_path = format!("Anime/{}/", file_path);
 
-    std::fs::create_dir_all(full_path).unwrap();
-    File::create(full_file_path.clone()).unwrap();
+    create_dir_and_file(&full_path, &full_file_path).await;
 
     loop {
         let response = client.get(&current_url).send().await?;
@@ -30,8 +41,7 @@ pub async fn handle_redirect_and_download(
             }
         }
 
-        let content = response.bytes().await?;
-        tokio::fs::write(full_file_path, content).await.unwrap();
+        download_content(&client, &current_url, &full_file_path).await?;
         println!("{}", downloaded_episode.green());
         return Ok(());
     }

@@ -97,7 +97,7 @@ pub async fn get_anime_episodes(anime_url_ending: String, path: &str) {
 
         let video_urls = get_video_url(authenticated_content).await;
         let encoded_url = video_urls.last().unwrap();
-        
+
         let _ = download::handle_redirect_and_download(&encoded_url, path, episode_number).await;
 
         episode_number += 1;
