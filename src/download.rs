@@ -1,8 +1,9 @@
 use colored::Colorize;
 use std::fs::File;
+use std::fs;
 
 async fn create_dir_and_file(full_path: &str, full_file_path: &str) {
-    std::fs::create_dir_all(full_path).unwrap();
+    fs::create_dir_all(full_path).unwrap();
     File::create(full_file_path).unwrap();
 }
 
@@ -31,6 +32,9 @@ pub async fn handle_redirect_and_download(
 
     create_dir_and_file(&full_path, &full_file_path).await;
 
+    let mut download_attempts = 0;
+    const MAX_DOWNLOAD_ATTEMPTS: u32 = 3;
+
     loop {
         let response = client.get(&current_url).send().await?;
 
@@ -42,7 +46,18 @@ pub async fn handle_redirect_and_download(
         }
 
         download_content(&client, &current_url, &full_file_path).await?;
-        println!("{}", downloaded_episode.green());
-        return Ok(());
+
+        let file_size = fs::metadata(&full_file_path).unwrap().len();
+        if file_size > 0 {
+            println!("{}", downloaded_episode.green());
+            return Ok(());
+        } else if download_attempts < MAX_DOWNLOAD_ATTEMPTS {
+            println!("Downloaded file is empty, retrying...");
+            download_attempts += 1;
+            continue;
+        } else {
+            println!("Failed to download a valid file after {} attempts.", MAX_DOWNLOAD_ATTEMPTS);
+            return Ok(());
+        }
     }
 }
