@@ -5,7 +5,7 @@ use reqwest::cookie::Jar;
 use reqwest::Client;
 use std::sync::Arc;
 
-static URL: &str = " https://anitaku.so";
+static URL: &str = "https://anitaku.so";
 
 pub async fn get_anime_episodes(anime_url_ending: String, path: &str) {
     let cookie_store = Arc::new(Jar::default());
@@ -13,31 +13,31 @@ pub async fn get_anime_episodes(anime_url_ending: String, path: &str) {
         .cookie_store(true)
         .cookie_provider(cookie_store.clone())
         .build()
-        .unwrap();
+        .expect("Failed to build client");
 
     // Make a request to the login page to get initial cookies
-    let _response = client
+    let _initial_response = client
         .get("https://anitaku.so/login.html")
         .send()
         .await
-        .unwrap();
+        .expect("Failed to fetch initial login page");
 
     // Extract CSRF token from the login page
-    let login_page = client
+    let login_page_html = client
         .get("https://anitaku.so/login.html")
         .send()
         .await
-        .unwrap()
+        .expect("Failed to fetch login page for CSRF")
         .text()
         .await
-        .unwrap();
-    let document = scraper::Html::parse_document(&login_page);
-    let selector = scraper::Selector::parse("meta[name='csrf-token']").unwrap();
+        .expect("Failed to extract text from login page");
+    let document = scraper::Html::parse_document(&login_page_html);
+    let selector = scraper::Selector::parse("meta[name='csrf-token']").expect("Failed to parse selector");
     let csrf_token = document
         .select(&selector)
         .next()
         .and_then(|element| element.value().attr("content"))
-        .ok_or("CSRF token not found");
+        .expect("CSRF token not found");
 
     // Send credentials along with the CSRF token to log in and get a session cookie
     let _response = client
@@ -45,7 +45,7 @@ pub async fn get_anime_episodes(anime_url_ending: String, path: &str) {
         .form(&[
             ("email", "zerodev.exe@proton.me"),
             ("password", "Cacaman18"),
-            ("_csrf", csrf_token.unwrap()),
+            ("_csrf", csrf_token),
         ])
         .send()
         .await
