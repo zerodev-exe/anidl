@@ -1,6 +1,7 @@
-use colored::Colorize;
 use std::fs::File;
 use std::fs;
+
+use crate::print_handleing::*;
 
 async fn create_dir_and_file(full_path: &str, full_file_path: &str) {
     fs::create_dir_all(full_path).unwrap();
@@ -19,10 +20,10 @@ pub async fn handle_redirect_and_download(
     file_path: &str,
     episode_number: u32,
 ) -> Result<(), reqwest::Error> {
-    let downloading_string = format!("{}{}", "Downloading episode ", episode_number);
-    let downloaded_episode = format!("{}{}", "Successfully downloaded episode ", episode_number);
+    let downloading_string = &format!("{}{}", "Downloading episode ", episode_number);
+    let downloaded_episode = &format!("{}{}", "Successfully downloaded episode ", episode_number);
 
-    println!("{}", downloading_string.blue());
+    info_print(&downloading_string);
     let client = reqwest::Client::new();
     let mut current_url = url.to_string();
 
@@ -49,14 +50,14 @@ pub async fn handle_redirect_and_download(
 
         let file_size = fs::metadata(&full_file_path).unwrap().len();
         if file_size > 0 {
-            println!("{}", downloaded_episode.green());
+            success_print(&downloaded_episode);
             return Ok(());
         } else if download_attempts < MAX_DOWNLOAD_ATTEMPTS {
-            println!("Downloaded file is empty, retrying...");
+            error_print("Downloaded file is empty, retrying...");
             download_attempts += 1;
             continue;
         } else {
-            println!("Failed to download a valid file after {} attempts.", MAX_DOWNLOAD_ATTEMPTS);
+            error_print(&format!("Failed to download a valid file after {} attempts.", MAX_DOWNLOAD_ATTEMPTS));
             return Ok(());
         }
     }

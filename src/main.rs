@@ -3,6 +3,9 @@ mod http;
 mod input_handler;
 mod logik;
 mod scraper;
+mod print_handleing;
+
+use crate::print_handleing::*;
 
 static URL: &str = " https://anitaku.so/search.html?keyword=";
 
@@ -25,7 +28,7 @@ async fn main() {
     let chosen_anime = input_handler::number_parser();
 
     let anime_url_ending = anime_url[chosen_anime - 1].clone();
-    println!("{}", anime_url_ending);
+    debug_print(&format!("Chosen anime: {}", anime_url_ending));
 
     let anime_name = scraper::get_anime_name(body).await;
     let path = anime_name[chosen_anime - 1].clone();

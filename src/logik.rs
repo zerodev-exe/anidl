@@ -1,6 +1,6 @@
 use crate::download;
+use crate::print_handleing::*;
 use crate::scraper::get_video_url;
-use colored::Colorize;
 use reqwest::cookie::Jar;
 use reqwest::Client;
 use std::sync::Arc;
@@ -62,19 +62,24 @@ pub async fn get_anime_episodes(anime_url_ending: String, path: &str) {
         if path_to_file.exists() {
             let metadata = std::fs::metadata(&full_file_path).unwrap();
             if metadata.len() > 0 {
-                println!(
-                    "File {} already exists and is not empty, skipping...",
-                    full_file_path.green()
+                info_print(
+                    &format!(
+                        "File {} already exists and is not empty, skipping...",
+                        full_file_path
+                    )
                 );
                 episode_number += 1;
                 continue;
             } else {
-                println!(
-                    "File {} already exists but is empty, proceeding with download...",
-                    full_file_path.red()
+                error_print(
+                    &format!(
+                        "File {} already exists but is empty, proceeding with download...",
+                        full_file_path
+                    )
                 );
             }
         }
+
         let episode_url = format!(
             "{}/{}-{}-{}",
             URL, anime_url_ending, episode_string, episode_number
