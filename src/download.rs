@@ -1,5 +1,5 @@
-use std::fs::File;
 use std::fs;
+use std::fs::File;
 
 use crate::print_handleing::*;
 
@@ -8,7 +8,11 @@ async fn create_dir_and_file(full_path: &str, full_file_path: &str) {
     File::create(full_file_path).unwrap();
 }
 
-async fn download_content(client: &reqwest::Client, url: &str, full_file_path: &str) -> Result<(), reqwest::Error> {
+async fn download_content(
+    client: &reqwest::Client,
+    url: &str,
+    full_file_path: &str,
+) -> Result<(), reqwest::Error> {
     let response = client.get(url).send().await?;
     let content = response.bytes().await?;
     tokio::fs::write(full_file_path, content).await.unwrap();
@@ -57,8 +61,11 @@ pub async fn handle_redirect_and_download(
             download_attempts += 1;
             continue;
         } else {
-            error_print(&format!("Failed to download a valid file after {} attempts.", MAX_DOWNLOAD_ATTEMPTS));
-            return Ok(());
+            let error_message = format!(
+                "Failed to download a valid file after {} attempts.",
+                MAX_DOWNLOAD_ATTEMPTS
+            );
+            error_print(&error_message);
         }
     }
 }
