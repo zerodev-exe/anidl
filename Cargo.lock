@@ -51,7 +51,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "colored",
- "log 0.4.21",
+ "lazy_static",
  "mkv",
  "reqwest",
  "scraper",
