@@ -1,7 +1,7 @@
 mod download;
 mod http;
 mod input_handler;
-mod logik;
+mod parser;
 mod print_handleing;
 mod scraper;
 
@@ -33,5 +33,5 @@ async fn main() {
     let anime_name = scraper::get_anime_name(body);
     let path = anime_name[chosen_anime - 1].clone();
 
-    logik::get_anime_episodes(anime_url_ending, &path).await;
+    parser::get_anime_episodes(anime_url_ending, &path).await;
 }
