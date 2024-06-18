@@ -37,7 +37,6 @@ pub fn number_parser() -> usize {
     return my_num;
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
