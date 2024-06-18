@@ -41,3 +41,36 @@ pub fn get_video_url(body: String) -> Vec<String> {
     anime_list
 }
 
+// TODO: Actaully use the the urls in the test cases
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tokio;
+
+    #[tokio::test]
+    async fn test_get_anime_url() {
+        let body =
+            r#"<div class="name"><a href="/anime/one-piece">One Piece</a></div>"#.to_string();
+
+        let urls = get_anime_url(body);
+        assert_eq!(urls, vec!["one-piece"]);
+    }
+
+    #[tokio::test]
+    async fn test_get_anime_name() {
+        let body = r#"<div class="name"><a>One Piece</a></div>"#.to_string();
+
+        let names = get_anime_name(body);
+        assert_eq!(names, vec!["One Piece"]);
+    }
+
+    #[tokio::test]
+    async fn test_get_video_url() {
+        let body =
+            r#"<div class="cf-download"><a href="http://example.com/video.mp4">Download</a></div>"#
+                .to_string();
+
+        let urls = get_video_url(body);
+        assert_eq!(urls, vec!["http://example.com/video.mp4"]);
+    }
+}
