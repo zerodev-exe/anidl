@@ -2,8 +2,8 @@ mod download;
 mod http;
 mod input_handler;
 mod logik;
-mod scraper;
 mod print_handleing;
+mod scraper;
 
 use crate::print_handleing::*;
 
@@ -23,14 +23,14 @@ async fn main() {
         .await
         .expect("Your request didn't work");
 
-    let anime_url = scraper::get_anime_url(body.clone()).await;
+    let anime_url = scraper::get_anime_url(body.clone());
 
     let chosen_anime = input_handler::number_parser();
 
     let anime_url_ending = anime_url[chosen_anime - 1].clone();
     debug_print(&format!("Chosen anime: {}", anime_url_ending));
 
-    let anime_name = scraper::get_anime_name(body).await;
+    let anime_name = scraper::get_anime_name(body);
     let path = anime_name[chosen_anime - 1].clone();
 
     logik::get_anime_episodes(anime_url_ending, &path).await;

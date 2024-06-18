@@ -2,7 +2,7 @@ use colored::*;
 use select::document::Document;
 use select::predicate::{Attr, Name, Predicate};
 
-pub async fn get_anime_url(body: String) -> Vec<String> {
+pub fn get_anime_url(body: String) -> Vec<String> {
     let mut anime_list: Vec<_> = vec![];
     let mut number_list = 0;
 
@@ -19,7 +19,7 @@ pub async fn get_anime_url(body: String) -> Vec<String> {
     anime_list
 }
 
-pub async fn get_anime_name(body: String) -> Vec<String> {
+pub fn get_anime_name(body: String) -> Vec<String> {
     let mut anime_list: Vec<_> = vec![];
 
     let document = Document::from(body.as_str());
@@ -30,7 +30,7 @@ pub async fn get_anime_name(body: String) -> Vec<String> {
     anime_list
 }
 
-pub async fn get_video_url(body: String) -> Vec<String> {
+pub fn get_video_url(body: String) -> Vec<String> {
     let mut anime_list: Vec<_> = vec![];
 
     let document = Document::from(body.as_str());
@@ -40,3 +40,4 @@ pub async fn get_video_url(body: String) -> Vec<String> {
 
     anime_list
 }
+
