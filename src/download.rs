@@ -15,7 +15,9 @@ async fn download_content(
 ) -> Result<(), reqwest::Error> {
     let response = client.get(url).send().await?;
     let content = response.bytes().await?;
-    tokio::fs::write(full_file_path, content).await.unwrap();
+    tokio::fs::write(full_file_path, content)
+        .await
+        .expect("Couldn't write to the file");
     Ok(())
 }
 

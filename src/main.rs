@@ -17,6 +17,7 @@ async fn main() {
     } else {
         input_handler::init_input()
     };
+
     let scraper_url_base: String = format!("{}{}", URL, url_ending);
 
     let body = http::get_html(scraper_url_base.to_string())
@@ -33,5 +34,5 @@ async fn main() {
     let anime_name = scraper::get_anime_name(body);
     let path = anime_name[chosen_anime - 1].clone();
 
-    parser::get_anime_episodes(anime_url_ending, &path).await;
+    let _ = parser::get_anime_episodes(anime_url_ending, &path).await;
 }

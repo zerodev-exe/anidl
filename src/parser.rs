@@ -1,56 +1,79 @@
 use crate::download;
 use crate::print_handleing::*;
 use crate::scraper::get_video_url;
-use reqwest::cookie::Jar;
-use reqwest::Client;
-use std::sync::Arc;
 
-static URL: &str = "https://anitaku.so";
+static URL: &str = "https://anitaku.so/";
 
-pub async fn get_anime_episodes(anime_url_ending: String, path: &str) {
-    let cookie_store = Arc::new(Jar::default());
-    let client = Client::builder()
+lazy_static::lazy_static! {
+    static ref CLIENT: reqwest::Client = reqwest::Client::builder()
         .cookie_store(true)
-        .cookie_provider(cookie_store.clone())
         .build()
-        .expect("Failed to build client");
+        .unwrap();
+}
 
-    // Make a request to the login page to get initial cookies
-    let _initial_response = client
-        .get("https://anitaku.so/login.html")
-        .send()
-        .await
-        .expect("Failed to fetch initial login page");
+trait HttpClient {
+    async fn get(&self, url: &str) -> Result<String, Box<dyn std::error::Error>>;
+    async fn post(
+        &self,
+        url: &str,
+        form: &[(&str, &str)],
+    ) -> Result<(), Box<dyn std::error::Error>>;
+}
 
-    // Extract CSRF token from the login page
-    let login_page_html = client
-        .get("https://anitaku.so/login.html")
-        .send()
-        .await
-        .expect("Failed to fetch login page for CSRF")
-        .text()
-        .await
-        .expect("Failed to extract text from login page");
-    let document = scraper::Html::parse_document(&login_page_html);
-    let selector =
-        scraper::Selector::parse("meta[name='csrf-token']").expect("Failed to parse selector");
+impl HttpClient for reqwest::Client {
+    async fn get(&self, url: &str) -> Result<String, Box<dyn std::error::Error>> {
+        let response = self.get(url).send().await?.text().await?;
+        Ok(response)
+    }
+
+    async fn post(
+        &self,
+        url: &str,
+        form: &[(&str, &str)],
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        self.post(url).form(form).send().await?;
+        Ok(())
+    }
+}
+
+async fn get_csrf_token<T: HttpClient>(client: &T) -> Result<String, Box<dyn std::error::Error>> {
+    let login_page = client.get(&format!("{}{}", URL,"login.html")).await?;
+    let document = scraper::Html::parse_document(&login_page);
+    let selector = scraper::Selector::parse("meta[name='csrf-token']")?;
     let csrf_token = document
         .select(&selector)
         .next()
         .and_then(|element| element.value().attr("content"))
-        .expect("CSRF token not found");
+        .ok_or("CSRF token not found")?;
+    Ok(csrf_token.to_string())
+}
 
-    // Send credentials along with the CSRF token to log in and get a session cookie
-    let _response = client
-        .post("https://anitaku.so/login.html")
-        .form(&[
-            ("email", "zerodev.exe@proton.me"),
-            ("password", "Cacaman18"),
-            ("_csrf", csrf_token),
-        ])
-        .send()
-        .await
-        .unwrap();
+async fn login<T: HttpClient>(
+    client: &T,
+    csrf_token: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    client
+        .post(
+            "https://anitaku.so/login.html",
+            &[
+                ("email", "zerodev.exe@proton.me"),
+                ("password", "Cacaman18"),
+                ("_csrf", csrf_token),
+            ],
+        )
+        .await?;
+    Ok(())
+}
+
+pub async fn get_anime_episodes(
+    anime_url_ending: String,
+    path: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let client = CLIENT.clone();
+
+    client.get("https://anitaku.so/login.html").send().await?;
+    let csrf_token = get_csrf_token(&client).await?;
+    login(&client, &csrf_token).await?;
 
     let mut episode_number: u32 = 1;
     let episode_string = "episode";
@@ -61,9 +84,9 @@ pub async fn get_anime_episodes(anime_url_ending: String, path: &str) {
 
         let path_to_file = std::path::Path::new(&full_file_path);
         if path_to_file.exists() {
-            let metadata = std::fs::metadata(&full_file_path).unwrap();
+            let metadata = std::fs::metadata(&full_file_path)?;
             if metadata.len() > 0 {
-                info_print(&format!(
+                success_print(&format!(
                     "File {} already exists and is not empty, skipping...",
                     full_file_path
                 ));
@@ -76,32 +99,23 @@ pub async fn get_anime_episodes(anime_url_ending: String, path: &str) {
                 ));
             }
         }
-
         let episode_url = format!(
             "{}/{}-{}-{}",
             URL, anime_url_ending, episode_string, episode_number
         );
 
-        let response = reqwest::get(&episode_url).await.unwrap();
+        let response = reqwest::get(&episode_url).await?;
         if response.status() != reqwest::StatusCode::OK {
             break;
         }
 
-        // Now you can make authenticated requests
-        let authenticated_content = client
-            .get(&episode_url)
-            .send()
-            .await
-            .unwrap()
-            .text()
-            .await
-            .unwrap();
-
+        let authenticated_content = client.get(&episode_url).send().await?.text().await?;
         let video_urls = get_video_url(authenticated_content);
-        let encoded_url = video_urls.last().unwrap();
+        let encoded_url = video_urls.last().ok_or("No video URL found")?;
 
-        let _ = download::handle_redirect_and_download(&encoded_url, path, episode_number).await;
+        download::handle_redirect_and_download(&encoded_url, path, episode_number).await?;
 
         episode_number += 1;
     }
+    Ok(())
 }
