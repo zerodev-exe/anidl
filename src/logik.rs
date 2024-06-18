@@ -32,7 +32,8 @@ pub async fn get_anime_episodes(anime_url_ending: String, path: &str) {
         .await
         .expect("Failed to extract text from login page");
     let document = scraper::Html::parse_document(&login_page_html);
-    let selector = scraper::Selector::parse("meta[name='csrf-token']").expect("Failed to parse selector");
+    let selector =
+        scraper::Selector::parse("meta[name='csrf-token']").expect("Failed to parse selector");
     let csrf_token = document
         .select(&selector)
         .next()
@@ -62,21 +63,17 @@ pub async fn get_anime_episodes(anime_url_ending: String, path: &str) {
         if path_to_file.exists() {
             let metadata = std::fs::metadata(&full_file_path).unwrap();
             if metadata.len() > 0 {
-                info_print(
-                    &format!(
-                        "File {} already exists and is not empty, skipping...",
-                        full_file_path
-                    )
-                );
+                info_print(&format!(
+                    "File {} already exists and is not empty, skipping...",
+                    full_file_path
+                ));
                 episode_number += 1;
                 continue;
             } else {
-                error_print(
-                    &format!(
-                        "File {} already exists but is empty, proceeding with download...",
-                        full_file_path
-                    )
-                );
+                error_print(&format!(
+                    "File {} already exists but is empty, proceeding with download...",
+                    full_file_path
+                ));
             }
         }
 
