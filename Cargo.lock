@@ -53,6 +53,7 @@ dependencies = [
  "colored",
  "lazy_static",
  "mkv",
+ "once_cell",
  "reqwest",
  "scraper",
  "select",

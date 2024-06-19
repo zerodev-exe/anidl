@@ -2,7 +2,15 @@ use colored::*;
 use select::document::Document;
 use select::predicate::{Attr, Name, Predicate};
 
-pub fn get_anime_url(body: String) -> Vec<String> {
+/// Extracts the URLs of anime from the provided HTML body.
+/// This function searches for 'a' tags within elements with class 'name'.
+///
+/// # Arguments
+/// * `body` - HTML content as a string.
+///
+/// # Returns
+/// A `Vec<String>` containing the URL endings of each anime.
+pub fn get_anime_url(body: String) -> Result<Vec<String>, &'static str> {
     let mut anime_list: Vec<_> = vec![];
     let mut number_list = 0;
 
@@ -11,14 +19,23 @@ pub fn get_anime_url(body: String) -> Vec<String> {
         number_list += 1;
         let num = format!("[{}]", number_list);
         println!("{} - {}", num.red(), node.text());
-        let temp_val = node.attr("href").unwrap().split("/");
-        let anime_url_ending = temp_val.last().expect("Someting went wrong");
+        let temp_val = node.attr("href").ok_or("href attribute missing")?;
+        let anime_url_ending = temp_val.split("/").last().ok_or("No URL ending found")?;
         anime_list.push(anime_url_ending.to_string())
     }
 
-    anime_list
+    Ok(anime_list)
 }
 
+/// Extracts the names of anime from the provided HTML body.
+///
+/// # Arguments
+///
+/// * `body` - A string containing the HTML content.
+///
+/// # Returns
+///
+/// A vector of strings, each representing the name of an anime.
 pub fn get_anime_name(body: String) -> Vec<String> {
     let mut anime_list: Vec<_> = vec![];
 
@@ -30,6 +47,15 @@ pub fn get_anime_name(body: String) -> Vec<String> {
     anime_list
 }
 
+/// Extracts the video URLs from the provided HTML body.
+///
+/// # Arguments
+///
+/// * `body` - A string containing the HTML content.
+///
+/// # Returns
+///
+/// A vector of strings, each representing a video URL.
 pub fn get_video_url(body: String) -> Vec<String> {
     let mut anime_list: Vec<_> = vec![];
 
@@ -41,21 +67,26 @@ pub fn get_video_url(body: String) -> Vec<String> {
     anime_list
 }
 
-// TODO: Actaully use the the urls in the test cases
+// TODO: Actually use the URLs in the test cases
 #[cfg(test)]
 mod tests {
+    use crate::http;
+
     use super::*;
     use tokio;
 
+    /// Tests the `get_anime_url` function.
     #[tokio::test]
     async fn test_get_anime_url() {
-        let body =
-            r#"<div class="name"><a href="/anime/one-piece">One Piece</a></div>"#.to_string();
+        let body = http::get_html("https://animepahe.com/anime/one-piece".to_string())
+            .await
+            .unwrap();
 
-        let urls = get_anime_url(body);
-        assert_eq!(urls, vec!["one-piece"]);
+        let urls = get_anime_url(body).unwrap();
+        assert_eq!(urls, vec!["one-piece".to_string()]);
     }
 
+    /// Tests the `get_anime_name` function.
     #[tokio::test]
     async fn test_get_anime_name() {
         let body = r#"<div class="name"><a>One Piece</a></div>"#.to_string();
@@ -64,6 +95,7 @@ mod tests {
         assert_eq!(names, vec!["One Piece"]);
     }
 
+    /// Tests the `get_video_url` function.
     #[tokio::test]
     async fn test_get_video_url() {
         let body =
@@ -73,4 +105,12 @@ mod tests {
         let urls = get_video_url(body);
         assert_eq!(urls, vec!["http://example.com/video.mp4"]);
     }
+
+    #[tokio::test]
+    async fn test_get_anime_url_with_empty_body() {
+        let body = "".to_string();
+        let urls = get_anime_url(body).unwrap();
+        assert!(urls.is_empty());
+    }
 }
+

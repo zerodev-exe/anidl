@@ -2,8 +2,10 @@ use crate::download;
 use crate::print_handleing::*;
 use crate::scraper::get_video_url;
 
+// Base URL for the anime site
 static URL: &str = "https://anitaku.so/";
 
+// Lazy initialization of a shared HTTP client with cookie support
 lazy_static::lazy_static! {
     static ref CLIENT: reqwest::Client = reqwest::Client::builder()
         .cookie_store(true)
@@ -11,6 +13,7 @@ lazy_static::lazy_static! {
         .unwrap();
 }
 
+// Trait defining the HTTP client operations
 trait HttpClient {
     async fn get(&self, url: &str) -> Result<String, Box<dyn std::error::Error>>;
     async fn post(
@@ -20,6 +23,7 @@ trait HttpClient {
     ) -> Result<(), Box<dyn std::error::Error>>;
 }
 
+// Implementation of the HttpClient trait for reqwest::Client
 impl HttpClient for reqwest::Client {
     async fn get(&self, url: &str) -> Result<String, Box<dyn std::error::Error>> {
         let response = self.get(url).send().await?.text().await?;
@@ -36,8 +40,9 @@ impl HttpClient for reqwest::Client {
     }
 }
 
+// Function to retrieve CSRF token from the login page
 async fn get_csrf_token<T: HttpClient>(client: &T) -> Result<String, Box<dyn std::error::Error>> {
-    let login_page = client.get(&format!("{}{}", URL,"login.html")).await?;
+    let login_page = client.get(&format!("{}{}", URL, "login.html")).await?;
     let document = scraper::Html::parse_document(&login_page);
     let selector = scraper::Selector::parse("meta[name='csrf-token']")?;
     let csrf_token = document
@@ -48,13 +53,14 @@ async fn get_csrf_token<T: HttpClient>(client: &T) -> Result<String, Box<dyn std
     Ok(csrf_token.to_string())
 }
 
+// Function to perform login using the CSRF token
 async fn login<T: HttpClient>(
     client: &T,
     csrf_token: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     client
         .post(
-            "https://anitaku.so/login.html",
+            &format!("{}{}", URL, "login.html"),
             &[
                 ("email", "zerodev.exe@proton.me"),
                 ("password", "Cacaman18"),
@@ -65,13 +71,17 @@ async fn login<T: HttpClient>(
     Ok(())
 }
 
+// Main function to fetch anime episodes
 pub async fn get_anime_episodes(
     anime_url_ending: String,
     path: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let client = CLIENT.clone();
 
-    client.get("https://anitaku.so/login.html").send().await?;
+    client
+        .get(&format!("{}{}", URL, "login.html"))
+        .send()
+        .await?;
     let csrf_token = get_csrf_token(&client).await?;
     login(&client, &csrf_token).await?;
 

@@ -10,9 +10,7 @@ pub fn init_input() -> String {
         .read_line(&mut input)
         .expect("Failed to read line");
 
-    let begin = trim(input);
-
-    return begin;
+    trim(input)
 }
 
 pub fn trim(input: String) -> String {
@@ -34,7 +32,7 @@ pub fn number_parser() -> usize {
         .parse()
         .expect("please give me correct string number!");
 
-    return my_num;
+    my_num
 }
 
 #[cfg(test)]

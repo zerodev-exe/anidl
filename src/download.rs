@@ -1,19 +1,25 @@
+use crate::print_handleing::*;
 use std::fs;
 use std::fs::File;
 
-use crate::print_handleing::*;
-
+// Asynchronously creates a directory and a file at the specified paths
 async fn create_dir_and_file(full_path: &str, full_file_path: &str) {
     fs::create_dir_all(full_path).unwrap();
     File::create(full_file_path).unwrap();
 }
 
+// Asynchronously downloads content from a given URL and writes it to a file
 async fn download_content(
     client: &reqwest::Client,
     url: &str,
     full_file_path: &str,
-) -> Result<(), reqwest::Error> {
-    let response = client.get(url).send().await?;
+) -> Result<(), Box<dyn std::error::Error>> {
+    let response = client
+        .get(url)
+        .send()
+        .await
+        .map_err(|e| format!("Failed to send request: {}", e))?;
+
     let content = response.bytes().await?;
     tokio::fs::write(full_file_path, content)
         .await
@@ -21,15 +27,13 @@ async fn download_content(
     Ok(())
 }
 
+// Handles redirection and downloading of content from a URL, with retry logic for failed downloads
 pub async fn handle_redirect_and_download(
     url: &str,
     file_path: &str,
     episode_number: u32,
-) -> Result<(), reqwest::Error> {
-    let downloading_string = &format!("{}{}", "Downloading episode ", episode_number);
-    let downloaded_episode = &format!("{}{}", "Successfully downloaded episode ", episode_number);
-
-    info_print(&downloading_string);
+) -> Result<(), Box<dyn std::error::Error>> {
+    info_print(&format!("Downloading episode {}", episode_number));
     let client = reqwest::Client::new();
     let mut current_url = url.to_string();
 
@@ -43,8 +47,24 @@ pub async fn handle_redirect_and_download(
     const MAX_DOWNLOAD_ATTEMPTS: u32 = 3;
 
     loop {
-        let response = client.get(&current_url).send().await?;
+        let response = match client.get(&current_url).send().await {
+            Ok(resp) => resp,
+            Err(e) => {
+                error_print(&format!("Failed to send request: {}", e));
+                if download_attempts < MAX_DOWNLOAD_ATTEMPTS {
+                    download_attempts += 1;
+                    continue;
+                } else {
+                    error_print(&format!(
+                        "Failed to download a valid file after {} attempts.",
+                        MAX_DOWNLOAD_ATTEMPTS
+                    ));
+                    break;
+                }
+            }
+        };
 
+        // If the response indicates a redirection, update the current URL and retry
         if response.status() == reqwest::StatusCode::FOUND {
             if let Some(location) = response.headers().get(reqwest::header::LOCATION) {
                 current_url = location.to_str().unwrap().to_string();
@@ -52,22 +72,29 @@ pub async fn handle_redirect_and_download(
             }
         }
 
+        // Attempt to download the content
         download_content(&client, &current_url, &full_file_path).await?;
 
+        // Check if the downloaded file is valid (non-empty)
         let file_size = fs::metadata(&full_file_path).unwrap().len();
         if file_size > 0 {
-            success_print(&downloaded_episode);
+            success_print(&format!(
+                "Successfully downloaded episode {}",
+                episode_number
+            ));
             return Ok(());
         } else if download_attempts < MAX_DOWNLOAD_ATTEMPTS {
             error_print("Downloaded file is empty, retrying...");
             download_attempts += 1;
             continue;
         } else {
-            let error_message = format!(
+            // If maximum download attempts are reached, log an error and retry one last time
+            error_print(&format!(
                 "Failed to download a valid file after {} attempts.",
                 MAX_DOWNLOAD_ATTEMPTS
-            );
-            error_print(&error_message);
+            ));
+            break;
         }
     }
+    Ok(())
 }

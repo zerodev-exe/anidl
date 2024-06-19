@@ -7,7 +7,7 @@ mod scraper;
 
 use crate::print_handleing::*;
 
-static URL: &str = " https://anitaku.so/search.html?keyword=";
+static BASE_URL: &str = "https://anitaku.so/search.html?keyword=";
 
 #[tokio::main]
 async fn main() {
@@ -18,17 +18,20 @@ async fn main() {
         input_handler::init_input()
     };
 
-    let scraper_url_base: String = format!("{}{}", URL, url_ending);
+    let scraper_url_base: String = format!("{}{}", BASE_URL, url_ending);
 
     let body = http::get_html(scraper_url_base.to_string())
         .await
-        .expect("Your request didn't work");
+        .expect("Failed to retrieve HTML content");
 
     let anime_url = scraper::get_anime_url(body.clone());
 
     let chosen_anime = input_handler::number_parser();
 
-    let anime_url_ending = anime_url[chosen_anime - 1].clone();
+    let anime_url_ending = match anime_url {
+        Ok(urls) => urls[chosen_anime - 1].clone(),
+        Err(e) => panic!("Error retrieving anime URL: {}", e),
+    };
     debug_print(&format!("Chosen anime: {}", anime_url_ending));
 
     let anime_name = scraper::get_anime_name(body);
