@@ -118,40 +118,33 @@ pub async fn get_anime_episodes(
             break;
         }
 
-        send_to_downloader(episode_url, path, episode_number).await?;
+        send_to_downloader_concurrent(vec![episode_url], path).await?;
 
         episode_number += 1;
     }
     Ok(())
 }
 
-async fn send_to_downloader(
-    episode_url: String,
+async fn send_to_downloader_concurrent(
+    episode_urls: Vec<String>,
     path: &str,
-    episode_number: u32,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let client = CLIENT.clone();
+    let futures: Vec<_> = episode_urls.into_iter().map(|episode_url| {
+        let client_ref = client.clone();
+        let path_ref = path.to_string();
+        tokio::spawn(async move {
+            info_print(&format!("Downloading episode from URL: {}", &episode_url));
+            let authenticated_content = client_ref.get(&episode_url).send().await?.text().await?;
+            let video_urls = get_video_url(authenticated_content);
+            let encoded_url = video_urls.last().ok_or("No video URL found")?;
+            download::handle_redirect_and_download(encoded_url, &path_ref, episode_number).await
+        })
+    }).collect();
 
-    info_print(&format!("Downloading episode {}", episode_number));
-
-    loop {
-        let authenticated_content = client.get(&episode_url).send().await?.text().await?;
-        let video_urls = get_video_url(authenticated_content);
-        let encoded_url = video_urls.last().ok_or("No video URL found")?;
-
-        match download::handle_redirect_and_download(encoded_url, path, episode_number).await {
-            Ok(_) => {
-                success_print(&format!(
-                    "Successfully downloaded episode {}",
-                    episode_number
-                ));
-                break;
-            }
-            Err(_) => {
-                info_print("Download failed retrying...");
-                continue;
-            }
-        }
+    for future in futures {
+        future.await??;
     }
+
     Ok(())
 }
