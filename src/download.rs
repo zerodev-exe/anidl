@@ -1,49 +1,44 @@
 use crate::print_handleing::*;
 use std::fs;
-use std::fs::File;
+use tokio::fs::File as OtherFile;
+use tokio::io::AsyncWriteExt;
+use reqwest::Client;
+use indicatif::{ProgressBar, ProgressStyle};
 
 // Asynchronously creates a directory and a file at the specified paths
 async fn create_dir_and_file(full_path: &str, full_file_path: &str) {
     fs::create_dir_all(full_path).unwrap();
-    File::create(full_file_path).unwrap();
+    OtherFile::create(full_file_path).await.unwrap();
 }
 
-// Asynchronously downloads content from a given URL and writes it to a file
+// Asynchronously downloads content from a given URL and writes it to a file with progress bar
 async fn download_content(
-    client: &reqwest::Client,
+    client: &Client,
     url: &str,
     full_file_path: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let response = client
-        .get(url)
-        .send()
-        .await
-        .map_err(|e| format!("Failed to send request: {}", e))?;
+    let mut response = client.get(url).send().await?;
+    let total_size = response
+        .content_length()
+        .ok_or("Failed to get content length")?;
 
-    if response.status().is_success() {
-        let content = response.bytes().await?;
-        if content.is_empty() {
-            error_print(&format!("Received empty content from URL: {}", url));
-            return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "Downloaded content is empty",
-            )));
-        }
-        tokio::fs::write(full_file_path, content)
-            .await
-            .expect("Couldn't write to the file");
-        Ok(())
-    } else {
-        error_print(&format!(
-            "Failed to download content. HTTP Status: {}, URL: {}",
-            response.status(),
-            url
-        ));
-        Err(Box::new(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "HTTP request failed",
-        )))
+    let pb = ProgressBar::new(total_size);
+    pb.set_style(ProgressStyle::default_bar()
+        .template("{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({eta})")?
+        .progress_chars("#>-"));
+
+    let mut file = OtherFile::create(full_file_path).await?;
+    let mut downloaded: u64 = 0;
+
+    while let Some(chunk) = response.chunk().await? {
+        file.write_all(&chunk).await?;
+        let new = std::cmp::min(downloaded + (chunk.len() as u64), total_size);
+        pb.set_position(new);
+        downloaded = new;
     }
+
+    pb.finish_with_message("Download complete");
+    Ok(())
 }
 
 // Handles redirection and downloading of content from a URL, with retry logic for failed downloads
@@ -52,7 +47,7 @@ pub async fn handle_redirect_and_download(
     file_path: &str,
     episode_number: u32,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let client = reqwest::Client::builder()
+    let client = Client::builder()
         .redirect(reqwest::redirect::Policy::limited(5)) // Limit the number of redirects to 5
         .build()?;
     let mut current_url = encoded_url.to_string();
@@ -75,27 +70,23 @@ pub async fn handle_redirect_and_download(
             }
         };
 
-        // If the response indicates a redirection, update the current URL and retry
         if response.status().is_redirection() {
             if let Some(location) = response.headers().get(reqwest::header::LOCATION) {
                 let new_url = location.to_str().unwrap().to_string();
-                println!("Redirecting to: {}", new_url); // Log the redirect target
+                println!("Redirecting to: {}", new_url);
                 current_url = new_url;
                 continue;
             }
         } else if response.status().is_client_error() {
             error_print("Too many redirects encountered.");
-            error_print(&format!("There was an error with the client",));
             return Err(Box::new(std::io::Error::new(
                 std::io::ErrorKind::Other,
                 "HTTP request failed",
             )));
         }
 
-        // Attempt to download the content
         download_content(&client, &current_url, &full_file_path).await?;
 
-        // Check if the downloaded file is valid (non-empty)
         let file_size = fs::metadata(&full_file_path).unwrap().len();
         if file_size > 0 {
             return Ok(());
@@ -103,41 +94,4 @@ pub async fn handle_redirect_and_download(
             error_print("Downloaded file is empty, retrying...");
         }
     }
-}
-
-use reqwest::Client;
-
-async fn get_file_size_before_download(url: &str) -> Result<u64, Box<dyn std::error::Error>> {
-    let client = Client::new();
-    let response = client.head(url).send().await?;
-
-    match response.headers().get(reqwest::header::CONTENT_LENGTH) {
-        Some(content_length) => {
-            let size = content_length.to_str()?.parse::<u64>()?;
-            Ok(size)
-        }
-        None => Err(Box::new(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "Content-Length header is missing",
-        ))),
-    }
-}
-
-use tokio::fs::File as OtherFile;
-use tokio::io::AsyncWriteExt;
-
-async fn download_and_write_file(
-    url: &str,
-    file_path: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let client = Client::new();
-    let mut response = client.get(url).send().await?;
-
-    let mut file = OtherFile::create(file_path).await?;
-
-    while let Some(chunk) = response.chunk().await? {
-        file.write_all(&chunk).await?;
-    }
-
-    Ok(())
 }
