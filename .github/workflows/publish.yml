@@ -1,0 +1,78 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - "*"
+  workflow_dispatch:
+
+jobs:
+  publish:
+    name: Publish ${{ matrix.release_name }} (on ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        target:
+          - armv7-unknown-linux-musleabihf
+          - arm-unknown-linux-musleabihf
+          - aarch64-apple-darwin
+          - x86_64-unknown-linux-musl
+          - x86_64-pc-windows-msvc
+          - x86_64-apple-darwin
+        include:
+          # ARM64
+          - os: ubuntu-latest
+            target: armv7-unknown-linux-musleabihf
+            artifact_name: target/armv7-unknown-linux-musleabihf/release/adl
+            release_name: armv7-unknown-linux-musleabihf
+          - os: ubuntu-latest
+            target: arm-unknown-linux-musleabihf
+            artifact_name: target/arm-unknown-linux-musleabihf/release/adl
+            release_name: arm-unknown-linux-musleabihf
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact_name: target/aarch64-apple-darwin/release/adl
+            release_name: aarch64-apple-darwin
+
+          # x86_64
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            artifact_name: target/x86_64-unknown-linux-musl/release/adl
+            release_name: x86_64-unknown-linux-musl
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact_name: target/x86_64-apple-darwin/release/adl
+            release_name: x86_64-apple-darwin
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact_name: target/x86_64-pc-windows-msvc/release/adl.exe
+            release_name: x86_64-pc-windows-msvc.exe
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install packages (Ubuntu)
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          ci/ubuntu-install-packages
+
+      - name: Build
+        uses: houseabsolute/actions-rust-cross@v0
+        with:
+          command: build
+          args: --release --locked
+          target: ${{ matrix.target }}
+
+      - name: Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ matrix.artifact_name }}
+          tag: ${{ github.ref }}
+          asset_name: anime-dl-$tag-${{ matrix.release_name }}
