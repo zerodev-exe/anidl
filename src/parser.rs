@@ -3,7 +3,6 @@ use crate::print_handleing::*;
 use crate::scraper::get_video_url;
 use crate::URL;
 
-
 // Lazy initialization of a shared HTTP client with cookie support
 lazy_static::lazy_static! {
     static ref CLIENT: reqwest::Client = reqwest::Client::builder()
@@ -126,8 +125,14 @@ pub async fn get_anime_episodes(
     Ok(())
 }
 
-async fn send_to_downloader(episode_url:String, path:&str, episode_number:u32) -> Result<(), Box<dyn std::error::Error>> {
+async fn send_to_downloader(
+    episode_url: String,
+    path: &str,
+    episode_number: u32,
+) -> Result<(), Box<dyn std::error::Error>> {
     let client = CLIENT.clone();
+
+    info_print(&format!("Downloading episode {}", episode_number));
 
     loop {
         let authenticated_content = client.get(&episode_url).send().await?.text().await?;
@@ -135,11 +140,18 @@ async fn send_to_downloader(episode_url:String, path:&str, episode_number:u32) -
         let encoded_url = video_urls.last().ok_or("No video URL found")?;
 
         match download::handle_redirect_and_download(encoded_url, path, episode_number).await {
-            Ok(_) => break,
-            Err(_) => continue,
+            Ok(_) => {
+                success_print(&format!(
+                    "Successfully downloaded episode {}",
+                    episode_number
+                ));
+                break;
+            }
+            Err(_) => {
+                info_print("Download failed retrying...");
+                continue;
+            }
         }
     }
     Ok(())
-
-
 }

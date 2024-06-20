@@ -52,7 +52,6 @@ pub async fn handle_redirect_and_download(
     file_path: &str,
     episode_number: u32,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    info_print(&format!("Downloading episode {}", episode_number));
     let client = reqwest::Client::builder()
         .redirect(reqwest::redirect::Policy::limited(5)) // Limit the number of redirects to 5
         .build()?;
@@ -64,27 +63,15 @@ pub async fn handle_redirect_and_download(
 
     create_dir_and_file(&full_path, &full_file_path).await;
 
-    let mut download_attempts = 0;
-    const MAX_DOWNLOAD_ATTEMPTS: u32 = 3;
-
     loop {
         let response = match client.get(&current_url).send().await {
             Ok(resp) => resp,
             Err(e) => {
-                error_print(&format!("Failed to send request: {}", e));
-                if download_attempts < MAX_DOWNLOAD_ATTEMPTS {
-                    download_attempts += 1;
-                    continue;
-                } else {
-                    error_print(&format!(
-                        "Failed to download a valid file after {} attempts.",
-                        MAX_DOWNLOAD_ATTEMPTS
-                    ));
-                    return Err(Box::new(std::io::Error::new(
-                        std::io::ErrorKind::Other,
-                        "HTTP request failed",
-                    )))
-                }
+                error_print(&format!("Failed to send request:\n{}", e));
+                return Err(Box::new(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    "HTTP request failed",
+                )));
             }
         };
 
@@ -98,19 +85,11 @@ pub async fn handle_redirect_and_download(
             }
         } else if response.status().is_client_error() {
             error_print("Too many redirects encountered.");
-            if download_attempts < MAX_DOWNLOAD_ATTEMPTS {
-                download_attempts += 1;
-                continue;
-            } else {
-                error_print(&format!(
-                    "Failed to download a valid file after {} attempts due to too many redirects.",
-                    MAX_DOWNLOAD_ATTEMPTS
-                ));
-                return Err(Box::new(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    "HTTP request failed",
-                )));
-            }
+            error_print(&format!("There was an error with the client",));
+            return Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "HTTP request failed",
+            )));
         }
 
         // Attempt to download the content
@@ -119,26 +98,46 @@ pub async fn handle_redirect_and_download(
         // Check if the downloaded file is valid (non-empty)
         let file_size = fs::metadata(&full_file_path).unwrap().len();
         if file_size > 0 {
-            success_print(&format!(
-                "Successfully downloaded episode {}",
-                episode_number
-            ));
             return Ok(());
-        } else if download_attempts < MAX_DOWNLOAD_ATTEMPTS {
-            error_print("Downloaded file is empty, retrying...");
-            download_attempts += 1;
-            continue;
         } else {
-            // If maximum download attempts are reached, log an error and retry one last time
-            error_print(&format!(
-                "Failed to download a valid file after {} attempts.",
-                MAX_DOWNLOAD_ATTEMPTS
-            ));
-            return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "HTTP request failed",
-            )));
+            error_print("Downloaded file is empty, retrying...");
         }
     }
 }
 
+use reqwest::Client;
+
+async fn get_file_size_before_download(url: &str) -> Result<u64, Box<dyn std::error::Error>> {
+    let client = Client::new();
+    let response = client.head(url).send().await?;
+
+    match response.headers().get(reqwest::header::CONTENT_LENGTH) {
+        Some(content_length) => {
+            let size = content_length.to_str()?.parse::<u64>()?;
+            Ok(size)
+        }
+        None => Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "Content-Length header is missing",
+        ))),
+    }
+}
+
+use tokio::fs::File as OtherFile;
+use tokio::io::AsyncWriteExt;
+
+async fn download_and_write_file(
+    url: &str,
+    file_path: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let client = Client::new();
+    let mut response = client.get(url).send().await?;
+
+    let mut file = OtherFile::create(file_path).await?;
+
+    while let Some(chunk) = response.chunk().await? {
+        file.write_all(&chunk).await?;
+    }
+
+    Ok(())
+}
