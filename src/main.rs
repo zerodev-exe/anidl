@@ -4,8 +4,10 @@ mod input_handler;
 mod parser;
 mod print_handleing;
 mod scraper;
+use std::process::exit;
 
 use crate::print_handleing::*;
+use colored::Colorize;
 
 pub static URL: &str = "https://anitaku.so/";
 
@@ -26,18 +28,34 @@ async fn main() {
         .await
         .expect("Failed to retrieve HTML content");
 
+    // NOTE: Printing the anime names
+    // =========================================
+    let mut number_list = 0;
+
     let anime_url = scraper::get_anime_url(body.clone());
+    let anime_name = scraper::get_anime_name(body);
+
+    if anime_url.clone().unwrap().is_empty() {
+        exit(1)
+    }
+
+    for i in anime_name.clone() {
+        number_list += 1;
+        let num = format!("[{}]", number_list);
+        println!("{} - {}", num.red(), i);
+    }
+
+    // =========================================
 
     let chosen_anime = input_handler::number_parser();
+    let path = anime_name[chosen_anime - 1].clone();
 
     let anime_url_ending = match anime_url {
         Ok(urls) => urls[chosen_anime - 1].clone(),
         Err(e) => panic!("Error retrieving anime URL: {}", e),
     };
-    debug_print(&format!("Chosen anime: {}", anime_url_ending));
 
-    let anime_name = scraper::get_anime_name(body);
-    let path = anime_name[chosen_anime - 1].clone();
+    debug_print(&format!("Chosen anime: {}", anime_url_ending));
 
     let _ = parser::get_anime_episodes(anime_url_ending, &path).await;
 }
