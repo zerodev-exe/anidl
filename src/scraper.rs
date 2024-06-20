@@ -10,7 +10,7 @@ use select::predicate::{Attr, Name, Predicate};
 /// # Returns
 /// A `Vec<String>` containing the URL endings of each anime.
 pub fn get_anime_url(body: String) -> Result<Vec<String>, &'static str> {
-    let mut anime_list: Vec<_> = vec![];
+    let mut anime_list: Vec<String> = vec![];
 
     let document = Document::from(body.as_str());
     for node in document.find(Attr("class", "name").descendant(Name("a"))) {
@@ -19,7 +19,6 @@ pub fn get_anime_url(body: String) -> Result<Vec<String>, &'static str> {
         anime_list.push(anime_url_ending.to_string())
     }
 
-    anime_list.sort();
     Ok(anime_list)
 }
 
@@ -40,7 +39,6 @@ pub fn get_anime_name(body: String) -> Vec<String> {
         anime_list.push(node.text());
     }
 
-    anime_list.sort();
     anime_list
 }
 

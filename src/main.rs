@@ -33,6 +33,7 @@ async fn main() {
     let mut number_list = 0;
 
     let anime_url = scraper::get_anime_url(body.clone());
+
     let anime_name = scraper::get_anime_name(body);
 
     if anime_url.clone().unwrap().is_empty() {
