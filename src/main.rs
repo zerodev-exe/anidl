@@ -7,6 +7,8 @@ mod scraper;
 
 use crate::print_handleing::*;
 
+pub static URL: &str = "https://anitaku.so/";
+
 static BASE_URL: &str = "https://anitaku.so/search.html?keyword=";
 
 #[tokio::main]

@@ -20,22 +20,43 @@ async fn download_content(
         .await
         .map_err(|e| format!("Failed to send request: {}", e))?;
 
-    let content = response.bytes().await?;
-    tokio::fs::write(full_file_path, content)
-        .await
-        .expect("Couldn't write to the file");
-    Ok(())
+    if response.status().is_success() {
+        let content = response.bytes().await?;
+        if content.is_empty() {
+            error_print(&format!("Received empty content from URL: {}", url));
+            return Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "Downloaded content is empty",
+            )));
+        }
+        tokio::fs::write(full_file_path, content)
+            .await
+            .expect("Couldn't write to the file");
+        Ok(())
+    } else {
+        error_print(&format!(
+            "Failed to download content. HTTP Status: {}, URL: {}",
+            response.status(),
+            url
+        ));
+        Err(Box::new(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "HTTP request failed",
+        )))
+    }
 }
 
 // Handles redirection and downloading of content from a URL, with retry logic for failed downloads
 pub async fn handle_redirect_and_download(
-    url: &str,
+    encoded_url: &str,
     file_path: &str,
     episode_number: u32,
 ) -> Result<(), Box<dyn std::error::Error>> {
     info_print(&format!("Downloading episode {}", episode_number));
-    let client = reqwest::Client::new();
-    let mut current_url = url.to_string();
+    let client = reqwest::Client::builder()
+        .redirect(reqwest::redirect::Policy::limited(5)) // Limit the number of redirects to 5
+        .build()?;
+    let mut current_url = encoded_url.to_string();
 
     let anime_episode = format!("EP-{:03}.mp4", episode_number);
     let full_file_path = format!("Anime/{}/{}", file_path, anime_episode);
@@ -59,16 +80,36 @@ pub async fn handle_redirect_and_download(
                         "Failed to download a valid file after {} attempts.",
                         MAX_DOWNLOAD_ATTEMPTS
                     ));
-                    break;
+                    return Err(Box::new(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        "HTTP request failed",
+                    )))
                 }
             }
         };
 
         // If the response indicates a redirection, update the current URL and retry
-        if response.status() == reqwest::StatusCode::FOUND {
+        if response.status().is_redirection() {
             if let Some(location) = response.headers().get(reqwest::header::LOCATION) {
-                current_url = location.to_str().unwrap().to_string();
+                let new_url = location.to_str().unwrap().to_string();
+                println!("Redirecting to: {}", new_url); // Log the redirect target
+                current_url = new_url;
                 continue;
+            }
+        } else if response.status().is_client_error() {
+            error_print("Too many redirects encountered.");
+            if download_attempts < MAX_DOWNLOAD_ATTEMPTS {
+                download_attempts += 1;
+                continue;
+            } else {
+                error_print(&format!(
+                    "Failed to download a valid file after {} attempts due to too many redirects.",
+                    MAX_DOWNLOAD_ATTEMPTS
+                ));
+                return Err(Box::new(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    "HTTP request failed",
+                )));
             }
         }
 
@@ -93,8 +134,11 @@ pub async fn handle_redirect_and_download(
                 "Failed to download a valid file after {} attempts.",
                 MAX_DOWNLOAD_ATTEMPTS
             ));
-            break;
+            return Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "HTTP request failed",
+            )));
         }
     }
-    Ok(())
 }
+

@@ -1,9 +1,8 @@
 use crate::download;
 use crate::print_handleing::*;
 use crate::scraper::get_video_url;
+use crate::URL;
 
-// Base URL for the anime site
-static URL: &str = "https://anitaku.so/";
 
 // Lazy initialization of a shared HTTP client with cookie support
 lazy_static::lazy_static! {
@@ -62,8 +61,8 @@ async fn login<T: HttpClient>(
         .post(
             &format!("{}{}", URL, "login.html"),
             &[
-                ("email", "zerodev.exe@proton.me"),
-                ("password", "Cacaman18"),
+                ("email", "ritosis807@exeneli.com"),
+                ("password", "'%dWU}ZdBJ8LzAy"),
                 ("_csrf", csrf_token),
             ],
         )
@@ -109,6 +108,7 @@ pub async fn get_anime_episodes(
                 ));
             }
         }
+
         let episode_url = format!(
             "{}/{}-{}-{}",
             URL, anime_url_ending, episode_string, episode_number
@@ -119,13 +119,27 @@ pub async fn get_anime_episodes(
             break;
         }
 
-        let authenticated_content = client.get(&episode_url).send().await?.text().await?;
-        let video_urls = get_video_url(authenticated_content);
-        let encoded_url = video_urls.last().ok_or("No video URL found")?;
-
-        download::handle_redirect_and_download(&encoded_url, path, episode_number).await?;
+        send_to_downloader(episode_url, path, episode_number).await?;
 
         episode_number += 1;
     }
     Ok(())
+}
+
+async fn send_to_downloader(episode_url:String, path:&str, episode_number:u32) -> Result<(), Box<dyn std::error::Error>> {
+    let client = CLIENT.clone();
+
+    loop {
+        let authenticated_content = client.get(&episode_url).send().await?.text().await?;
+        let video_urls = get_video_url(authenticated_content);
+        let encoded_url = video_urls.last().ok_or("No video URL found")?;
+
+        match download::handle_redirect_and_download(encoded_url, path, episode_number).await {
+            Ok(_) => break,
+            Err(_) => continue,
+        }
+    }
+    Ok(())
+
+
 }
