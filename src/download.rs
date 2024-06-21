@@ -1,14 +1,16 @@
 use crate::print_handleing::*;
-use std::fs;
-use tokio::fs::File as OtherFile;
-use tokio::io::AsyncWriteExt;
-use reqwest::Client;
 use indicatif::{ProgressBar, ProgressStyle};
+use reqwest::Client;
+use std::fs;
+use tokio::fs::File;
+use tokio::io::AsyncWriteExt;
 
 // Asynchronously creates a directory and a file at the specified paths
 async fn create_dir_and_file(full_path: &str, full_file_path: &str) {
-    fs::create_dir_all(full_path).unwrap();
-    OtherFile::create(full_file_path).await.unwrap();
+    fs::create_dir_all(full_path).expect("Couldn't create the path");
+    File::create(full_file_path)
+        .await
+        .expect("Couldn't create the file");
 }
 
 // Asynchronously downloads content from a given URL and writes it to a file with progress bar
@@ -27,7 +29,7 @@ async fn download_content(
         .template("{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({eta})")?
         .progress_chars("#>-"));
 
-    let mut file = OtherFile::create(full_file_path).await?;
+    let mut file = File::create(full_file_path).await?;
     let mut downloaded: u64 = 0;
 
     while let Some(chunk) = response.chunk().await? {
@@ -95,3 +97,4 @@ pub async fn handle_redirect_and_download(
         }
     }
 }
+
