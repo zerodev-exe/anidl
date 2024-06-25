@@ -10,3 +10,7 @@ cd anidl
 cargo b --release
 ln -snf $(pwd)/target/release/anidl /home/zero/.local/bin
 ```
+
+```bash
+cargo install --git https://github.com/zerodev-exe/anidl
+```
