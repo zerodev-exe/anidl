@@ -23,13 +23,14 @@ async fn download_content(
     let total_size = response
         .content_length()
         .ok_or("Failed to get content length")?;
-
     let pb = ProgressBar::new(total_size);
     pb.set_style(ProgressStyle::default_bar()
         .template("{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({eta})")?
         .progress_chars("#>-"));
 
-    let mut file = File::create(full_file_path).await?;
+    // Create a temporary file path
+    let temp_file_path = format!("{}.tmp", full_file_path);
+    let mut file = File::create(&temp_file_path).await?;
     let mut downloaded: u64 = 0;
 
     while let Some(chunk) = response.chunk().await? {
@@ -40,6 +41,10 @@ async fn download_content(
     }
 
     pb.finish_with_message("Download complete");
+
+    // Rename the temporary file to the actual file path
+    tokio::fs::rename(&temp_file_path, full_file_path).await?;
+
     Ok(())
 }
 
@@ -97,4 +102,3 @@ pub async fn handle_redirect_and_download(
         }
     }
 }
-
