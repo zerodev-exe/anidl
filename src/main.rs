@@ -4,10 +4,9 @@ mod input_handler;
 mod parser;
 mod print_handleing;
 mod scraper;
-use std::process::exit;
-
 use crate::print_handleing::*;
 use colored::Colorize;
+use std::process::exit;
 
 pub static URL: &str = "https://anitaku.so/";
 
@@ -37,6 +36,10 @@ async fn main() {
     let anime_name = scraper::get_anime_name(body);
 
     if anime_url.clone().unwrap().is_empty() {
+        error_print(&format!(
+            "{} : {}",
+            "No anime found with the name", url_ending
+        ));
         exit(1)
     }
 
