@@ -8,9 +8,9 @@ use crate::print_handleing::*;
 use colored::Colorize;
 use std::process::exit;
 
-pub static URL: &str = "https://anitaku.so/";
+pub static URL: &str = "https://anitaku.pe/";
 
-static BASE_URL: &str = "https://anitaku.so/search.html?keyword=";
+static BASE_URL: &str = "https://anitaku.pe/search.html?keyword=";
 
 #[tokio::main]
 async fn main() {
