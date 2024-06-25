@@ -132,6 +132,8 @@ async fn send_to_downloader(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let client = CLIENT.clone();
 
+    info_print(&format!("Trying to download episode {}", episode_number));
+
     loop {
         let authenticated_content = client.get(&episode_url).send().await?.text().await?;
         let video_urls = get_video_url(authenticated_content);
@@ -145,5 +147,9 @@ async fn send_to_downloader(
             }
         }
     }
+    success_print(&format!(
+        "Successfully downloaded episode {}",
+        episode_number
+    ));
     Ok(())
 }
