@@ -132,7 +132,7 @@ async fn send_to_downloader(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let client = CLIENT.clone();
 
-    info_print(&format!("Trying to download episode {}", episode_number));
+    info_print(&format!("Downloading episode {}", episode_number));
 
     loop {
         let authenticated_content = client.get(&episode_url).send().await?.text().await?;
