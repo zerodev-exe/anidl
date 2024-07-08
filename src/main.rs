@@ -61,5 +61,5 @@ async fn main() {
 
     debug_print(&format!("Chosen anime: {}", anime_url_ending));
 
-    let _ = parser::get_anime_episodes(anime_url_ending, &path).await;
+    let _ = parser::get_anime_episodes_and_download_the_episodes(anime_url_ending, &path).await;
 }

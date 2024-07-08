@@ -70,7 +70,7 @@ async fn login<T: HttpClient>(
 }
 
 // Main function to fetch anime episodes
-pub async fn get_anime_episodes(
+pub async fn get_anime_episodes_and_download_the_episodes(
     anime_url_ending: String,
     path: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
