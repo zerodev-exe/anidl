@@ -66,10 +66,15 @@ pub async fn handle_redirect_and_download(
     create_dir_and_file(&full_path, &full_file_path).await;
 
     loop {
+        println!("Handling Redirect and Download...");
+        println!("Episode: {}", episode_number);
+        println!("File Path: {}", file_path);
+        println!("Encoded URL: {}", encoded_url);
+
         let response = match client.get(&current_url).send().await {
             Ok(resp) => resp,
             Err(e) => {
-                error_print(&format!("Failed to send request:\n{}", e));
+                error_print(&format!("Link is unreachable :(\n{}", e));
                 return Err(Box::new(std::io::Error::new(
                     std::io::ErrorKind::Other,
                     "HTTP request failed",

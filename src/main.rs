@@ -1,9 +1,9 @@
 mod download;
-mod http;
 mod input_handler;
 mod parser;
 mod print_handleing;
 mod scraper;
+mod utils;
 use crate::print_handleing::*;
 use colored::Colorize;
 use std::process::exit;
@@ -23,12 +23,13 @@ async fn main() {
 
     let scraper_url_base: String = format!("{}{}", BASE_URL, url_ending);
 
-    let body = http::get_html(scraper_url_base.to_string())
+    let body = utils::get_html(scraper_url_base.to_string())
         .await
         .expect("Failed to retrieve HTML content");
 
     // NOTE: Printing the anime names
     // =========================================
+
     let mut number_list = 0;
 
     let anime_url = scraper::get_anime_url(body.clone());
@@ -51,13 +52,15 @@ async fn main() {
 
     // =========================================
 
-    let chosen_anime = input_handler::number_parser();
+    let chosen_anime = input_handler::number_parser().unwrap();
     let path = anime_name[chosen_anime - 1].clone();
 
     let anime_url_ending = match anime_url {
         Ok(urls) => urls[chosen_anime - 1].clone(),
         Err(e) => panic!("Error retrieving anime URL: {}", e),
     };
+
+    utils::clear_terminal_screen();
 
     debug_print(&format!("Chosen anime: {}", anime_url_ending));
 

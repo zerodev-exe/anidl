@@ -18,7 +18,7 @@ pub fn trim(input: String) -> String {
     return input.trim().replace(" ", "%20");
 }
 
-pub fn number_parser() -> usize {
+pub fn number_parser() -> Result<usize, Box<dyn std::error::Error + 'static>> {
     // Read input from the user
     let mut input = String::new();
     let output = "Enter the number of the anime :".green();
@@ -32,7 +32,7 @@ pub fn number_parser() -> usize {
         .parse()
         .expect("please give me correct string number!");
 
-    my_num
+    Ok(my_num)
 }
 
 #[cfg(test)]

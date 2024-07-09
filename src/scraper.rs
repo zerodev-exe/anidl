@@ -65,14 +65,14 @@ pub fn get_video_url(body: String) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::http;
+    use crate::utils;
     use tokio;
 
     /// Tests the `get_anime_url` function.
     #[tokio::test]
     async fn test_get_anime_url() {
         let body =
-            http::get_html("https://anitaku.so/search.html?keyword=Kenka%20Dokugaku".to_string())
+            utils::get_html("https://anitaku.so/search.html?keyword=Kenka%20Dokugaku".to_string())
                 .await
                 .unwrap();
 
@@ -90,7 +90,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_anime_name() {
         let body =
-            http::get_html("https://anitaku.so/search.html?keyword=kenka%20dokugaku".to_string())
+            utils::get_html("https://anitaku.so/search.html?keyword=kenka%20dokugaku".to_string())
                 .await
                 .unwrap();
 

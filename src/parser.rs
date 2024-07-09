@@ -1,6 +1,7 @@
 use crate::download;
 use crate::print_handleing::*;
 use crate::scraper::get_video_url;
+use crate::utils;
 use crate::URL;
 
 // Lazy initialization of a shared HTTP client with cookie support
@@ -151,5 +152,8 @@ async fn send_to_downloader(
         "Successfully downloaded episode {}",
         episode_number
     ));
+
+    utils::clear_terminal_screen();
+
     Ok(())
 }
