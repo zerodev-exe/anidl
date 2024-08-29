@@ -3,6 +3,9 @@ name = "gogoanime-scraper"
 version = "1.0.0"
 edition = "2021"
 description = "A blazing fast anime scraper for GoGoAnime"
+license = "MIT"
+repository = "https://github.com/zerodev-exe/gogoanime"
+
 
 [dependencies]
 select = "0.6.0"
