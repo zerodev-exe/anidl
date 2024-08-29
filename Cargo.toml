@@ -2,6 +2,7 @@
 name = "gogoanime-scraper"
 version = "1.0.0"
 edition = "2021"
+description = "A blazing fast anime scraper for GoGoAnime"
 
 [dependencies]
 select = "0.6.0"
