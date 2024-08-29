@@ -6,7 +6,6 @@ description = "A blazing fast anime scraper for GoGoAnime"
 license = "MIT"
 repository = "https://github.com/zerodev-exe/gogoanime"
 
-
 [dependencies]
 select = "0.6.0"
 tokio = { version = "1", features = ["full"] }

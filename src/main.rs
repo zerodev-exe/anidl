@@ -48,14 +48,14 @@ async fn fetch_html_body(scraper_url_base: String) -> Result<String, reqwest::Er
     utils::get_html(scraper_url_base).await
 }
 
-fn get_anime_details(body: String) -> (Result<Vec<String>, &'static str>, Vec<String>) {
+fn get_anime_details(body: String) -> (Vec<String>, Vec<String>) {
     let anime_url = parser::get_anime_url(body.clone());
     let anime_name = parser::get_anime_name(body);
     (anime_url, anime_name)
 }
 
-fn validate_anime_url(anime_url: &Result<Vec<String>, &'static str>, url_ending: &str) {
-    if anime_url.clone().unwrap().is_empty() {
+fn validate_anime_url(anime_url: &Vec<String>, url_ending: &str) {
+    if anime_url.is_empty() {
         error_print(&format!("No anime found with the name: {}", url_ending));
         exit(1);
     }
@@ -68,11 +68,8 @@ fn get_chosen_anime(anime_name: &[String]) -> (usize, String) {
 }
 
 fn get_anime_url_ending(
-    anime_url: Result<Vec<String>, &'static str>,
+    anime_url: Vec<String>,
     chosen_anime: usize,
 ) -> String {
-    match anime_url {
-        Ok(urls) => urls[chosen_anime - 1].clone(),
-        Err(e) => panic!("Error retrieving anime URL: {}", e),
-    }
+    anime_url[chosen_anime - 1].clone()
 }

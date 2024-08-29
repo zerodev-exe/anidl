@@ -10,7 +10,7 @@ use select::predicate::{Attr, Name, Predicate};
 ///
 /// # Returns
 /// A `Vec<String>` containing the URL endings of each anime.
-pub fn get_anime_url(body: String) -> Result<Vec<String>, &'static str> {
+pub fn get_anime_url(body: String) -> Vec<String> {
     let document = parse_document(&body);
     let nodes = find_nodes(&document, "name");
 
@@ -23,7 +23,7 @@ pub fn get_anime_url(body: String) -> Result<Vec<String>, &'static str> {
         })
         .collect();
 
-    Ok(anime_list)
+    anime_list
 }
 
 /// Extracts the names of anime from the provided HTML body.
@@ -99,7 +99,7 @@ mod tests {
             .await
             .unwrap();
 
-        let urls = get_anime_url(body).unwrap();
+        let urls = get_anime_url(body);
         assert_eq!(
             urls,
             vec![
@@ -124,7 +124,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_anime_url_with_empty_body() {
         let body = "".to_string();
-        let urls = get_anime_url(body).unwrap();
+        let urls = get_anime_url(body);
         assert!(urls.is_empty());
     }
 }

@@ -25,6 +25,14 @@ pub async fn get_anime_list_by_name(anime_name: String) -> (Vec<String>, Vec<Str
     get_anime_details(body)
 }
 
+pub fn get_anime_info(body: String) -> (Vec<String>, Vec<String>, Vec<String>) {
+    let anime_url = parser::get_anime_url(body.clone());
+    let anime_name = parser::get_anime_name(body.clone());
+    let anime_images = parser::get_anime_images(body);
+    (anime_url, anime_name, anime_images)
+}
+
+
 pub async fn download_anime_episodes(
     anime_url_ending: String,
     path: &str,
@@ -35,5 +43,5 @@ pub async fn download_anime_episodes(
 fn get_anime_details(body: String) -> (Vec<String>, Vec<String>) {
     let anime_url = parser::get_anime_url(body.clone());
     let anime_name = parser::get_anime_name(body);
-    (anime_url.unwrap(), anime_name)
+    (anime_url, anime_name)
 }
