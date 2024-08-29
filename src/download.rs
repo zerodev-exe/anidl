@@ -79,14 +79,14 @@ async fn download_content(
     }
 
     tokio::fs::rename(&temp_file_path, full_file_path).await?;
-    let file_size = fs::metadata(&full_file_path).unwrap().len();
+    let file_size = fs::metadata(full_file_path).unwrap().len();
     if file_size > 0 {
-        return Ok(());
+        Ok(())
     } else {
-        return Err(Box::new(std::io::Error::new(
+        Err(Box::new(std::io::Error::new(
             std::io::ErrorKind::Other,
             "Download failed",
-        )));
+        )))
     }
 }
 
@@ -102,6 +102,10 @@ pub async fn handle_redirect_and_download(
     let full_file_path = format!("Anime/{}/{}", file_path, anime_episode);
     download_content(&client, &final_url, &full_file_path).await?;
     Ok(())
+}
+
+fn create_temp_file_path(full_file_path: &str) -> String {
+    format!("{}.tmp", full_file_path)
 }
 
 #[cfg(test)]
@@ -142,8 +146,4 @@ mod tests {
         remove_file(full_file_path).await.unwrap();
         std::fs::remove_dir_all(format!("Anime/{}", file_path)).unwrap();
     }
-}
-
-fn create_temp_file_path(full_file_path: &str) -> String {
-    format!("{}.tmp", full_file_path)
 }
