@@ -209,3 +209,33 @@ async fn create_download_task(
         send_to_downloader(episode_url, path_clone, episode_number).await
     })
 }
+
+// Main function to fetch anime episodes
+pub async fn get_anime_episodes(
+    anime_url_ending: String,
+) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+    let client = initialize_client();
+
+    fetch_login_page(&client).await?;
+    let csrf_token = get_csrf_token(&client).await?;
+    login(&client, &csrf_token).await?;
+
+    let mut episode_number: u32 = 1;
+
+    let mut episode_urls: Vec<String> = vec![];
+
+    loop {
+        let episode_url = format!("{}/{}-episode-{}", URL, anime_url_ending, episode_number);
+
+        let response = reqwest::get(&episode_url).await?;
+        if response.status() != reqwest::StatusCode::OK {
+            break;
+        }
+
+        episode_urls.push(episode_url);
+
+        episode_number += 1;
+    }
+
+    Ok(episode_urls)
+}

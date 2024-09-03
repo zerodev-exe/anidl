@@ -26,8 +26,12 @@ async fn main() {
 
     debug_print(&format!("Chosen anime: {}", anime_url_ending));
 
-    match scraper::get_anime_episodes_and_download_the_episodes(anime_url_ending, &path).await {
-        Ok(_) => success_print("Successfully downloaded all of the episodes"),
+    match scraper::get_anime_episodes(anime_url_ending).await {
+        Ok(episode_urls) => {
+            for episode_url in episode_urls {
+                println!("{}", episode_url);
+            }
+        }
         Err(_) => error_print("Failed to download all of the episodes"),
     }
 }
@@ -67,9 +71,6 @@ fn get_chosen_anime(anime_name: &[String]) -> (usize, String) {
     (chosen_anime, path)
 }
 
-fn get_anime_url_ending(
-    anime_url: Vec<String>,
-    chosen_anime: usize,
-) -> String {
+fn get_anime_url_ending(anime_url: Vec<String>, chosen_anime: usize) -> String {
     anime_url[chosen_anime - 1].clone()
 }
