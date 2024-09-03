@@ -21,7 +21,7 @@ async fn main() {
 
     print_anime_list(&anime_name);
 
-    let (chosen_anime, path) = get_chosen_anime(&anime_name);
+    let (chosen_anime, _path) = get_chosen_anime(&anime_name);
     let anime_url_ending = get_anime_url_ending(anime_url, chosen_anime);
 
     debug_print(&format!("Chosen anime: {}", anime_url_ending));
@@ -29,7 +29,7 @@ async fn main() {
     match scraper::get_anime_episodes(anime_url_ending).await {
         Ok(episode_urls) => {
             for episode_url in episode_urls {
-                println!("{}", episode_url);
+                success_print(&episode_url);
             }
         }
         Err(_) => error_print("Failed to download all of the episodes"),
