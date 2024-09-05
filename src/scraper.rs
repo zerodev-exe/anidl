@@ -119,7 +119,7 @@ pub async fn get_anime_episodes_and_download_the_episodes(
     let results = join_all(tasks).await;
     for result in results {
         if let Err(e) = result {
-            return Err(Box::new(e));
+            println!("Error downloading episode: {}", e);
         }
     }
 
@@ -152,11 +152,8 @@ async fn send_to_downloader(
             }
         };
 
-        match download::handle_redirect_and_get_link(encoded_url, &path, episode_number).await {
-            Ok(url) => {
-                println!("{}", url);
-                break;
-            }
+        match download::handle_redirect_and_download(encoded_url, &path, episode_number).await {
+            Ok(_) => {}
             Err(_) => {
                 if retry_count >= max_retries {
                     return Err(Box::new(std::io::Error::new(
@@ -169,8 +166,6 @@ async fn send_to_downloader(
             }
         }
     }
-
-    Ok(())
 }
 
 async fn fetch_login_page(client: &reqwest::Client) -> Result<(), reqwest::Error> {
