@@ -13,8 +13,6 @@ async fn main() {
         .await
         .expect("Failed to retrieve HTML content");
 
-    println!("{:?}", parser::get_anime_images(body.clone()));
-
     let (anime_url, anime_name) = get_anime_details(body);
 
     validate_anime_url(&anime_url, &url_ending);
@@ -24,7 +22,6 @@ async fn main() {
     let (chosen_anime, _path) = get_chosen_anime(&anime_name);
     let anime_url_ending = get_anime_url_ending(anime_url, chosen_anime);
 
-    debug_print(&format!("Chosen anime: {}", anime_url_ending));
 
     match scraper::get_anime_episodes_and_download_the_episodes(anime_url_ending, &_path).await {
         Ok(_) => success_print("Successfully downloaded all of the episodes"),
