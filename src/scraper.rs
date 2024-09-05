@@ -90,7 +90,7 @@ pub async fn get_anime_episodes_and_download_the_episodes(
 
     loop {
         let anime_episode = format!("EP-{:03}.mp4", episode_number);
-        let full_file_path = format!("Anime/{}/{}", path, anime_episode);
+        let full_file_path = format!("~/Videos/Anime/{}/{}", path, anime_episode);
 
         if process_existing_file(&full_file_path)? {
             episode_number += 1;
