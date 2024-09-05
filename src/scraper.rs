@@ -153,7 +153,9 @@ async fn send_to_downloader(
         };
 
         match download::handle_redirect_and_download(encoded_url, &path, episode_number).await {
-            Ok(_) => {}
+            Ok(_) => {
+                break; // Break the loop after a successful download
+            }
             Err(_) => {
                 if retry_count >= max_retries {
                     return Err(Box::new(std::io::Error::new(
@@ -166,6 +168,8 @@ async fn send_to_downloader(
             }
         }
     }
+
+    Ok(())
 }
 
 async fn fetch_login_page(client: &reqwest::Client) -> Result<(), reqwest::Error> {
@@ -200,7 +204,7 @@ async fn create_download_task(
     let permit = semaphore.clone().acquire_owned().await.unwrap();
     let path_clone = path.clone();
     task::spawn(async move {
-        let _permit = permit;
+        let _permit = permit; // This ensures the semaphore is released when the task completes
         send_to_downloader(episode_url, path_clone, episode_number).await
     })
 }
