@@ -22,7 +22,6 @@ async fn main() {
     let (chosen_anime, _path) = get_chosen_anime(&anime_name);
     let anime_url_ending = get_anime_url_ending(anime_url, chosen_anime);
 
-
     match scraper::get_anime_episodes_and_download_the_episodes(anime_url_ending, &_path).await {
         Ok(_) => success_print("Successfully downloaded all of the episodes"),
         Err(_) => error_print("Failed to download all of the episodes"),

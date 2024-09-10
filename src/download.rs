@@ -1,12 +1,14 @@
+use dirs;
 use reqwest::Client;
 use std::fs;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
-use dirs;
 
 // Asynchronously creates a directory and a file at the specified paths
 async fn create_dir_and_file(file_path: &str, file_name: &str) {
-    let videos_dir = dirs::video_dir().ok_or("Could not find the Videos directory").unwrap();
+    let videos_dir = dirs::video_dir()
+        .ok_or("Could not find the Videos directory")
+        .unwrap();
     let full_path = videos_dir.join("Anime").join(file_path);
     let full_file_path = full_path.join(file_name);
     fs::create_dir_all(&full_path).expect("Couldn't create the path");
@@ -28,11 +30,17 @@ pub async fn handle_redirect_and_get_link(
 
     let anime_episode = format!("EP-{:03}.mp4", episode_number);
     let videos_dir = dirs::video_dir().ok_or("Could not find the Videos directory")?;
-    let full_file_path = videos_dir.join("Anime").join(file_path).join(&anime_episode);
+    let full_file_path = videos_dir
+        .join("Anime")
+        .join(file_path)
+        .join(&anime_episode);
     let full_path = videos_dir.join("Anime").join(file_path);
 
-
-    create_dir_and_file(full_path.to_str().unwrap(), full_file_path.to_str().unwrap()).await;
+    create_dir_and_file(
+        full_path.to_str().unwrap(),
+        full_file_path.to_str().unwrap(),
+    )
+    .await;
 
     loop {
         let response = match client.get(&current_url).send().await {
