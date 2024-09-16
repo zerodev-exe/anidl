@@ -19,7 +19,7 @@ fn read_input(prompt: &str) -> String {
 /// Trims whitespace from the input and replaces spaces with "%20".
 pub fn trim(input: String) -> String {
     // Trim whitespace from the input
-    return input.trim().replace(" ", "%20");
+    input.trim().replace(" ", "%20")
 }
 
 /// Parses a string input into a usize.
