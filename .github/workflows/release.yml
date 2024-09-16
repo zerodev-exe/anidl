@@ -1,0 +1,87 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write # Ensure necessary permissions
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: macos-latest
+            target: x86_64-apple-darwin
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+          override: true
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Package
+        shell: pwsh
+        run: |
+          mkdir -p dist
+          if ("${{ matrix.os }}" -eq "windows-latest") {
+            cp target/${{ matrix.target }}/release/anidl.exe dist/anidl-windows.exe
+          } elseif ("${{ matrix.os }}" -eq "macos-latest") {
+            cp target/${{ matrix.target }}/release/anidl dist/anidl-macos
+          } else {
+            cp target/${{ matrix.target }}/release/anidl dist/anidl-linux
+          }
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: anidl-${{ matrix.os }}
+          path: dist/
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts (Linux)
+        uses: actions/download-artifact@v4
+        with:
+          name: anidl-ubuntu-latest
+          path: dist/linux
+
+      - name: Download artifacts (MacOS)
+        uses: actions/download-artifact@v4
+        with:
+          name: anidl-macos-latest
+          path: dist/macos
+
+      - name: Download artifacts (Windows)
+        uses: actions/download-artifact@v4
+        with:
+          name: anidl-windows-latest
+          path: dist/windows
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/linux/anidl-linux
+            dist/macos/anidl-macos
+            dist/windows/anidl-windows.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
