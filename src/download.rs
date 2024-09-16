@@ -11,7 +11,6 @@ fn create_dir(file_path: &str) {
     fs::create_dir_all(&full_path).expect("Couldn't create the path");
 }
 
-
 // Handles redirection and returns the final download link from a URL, with retry logic for failed requests
 pub async fn handle_redirect_and_get_link(
     encoded_url: &str,
