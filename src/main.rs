@@ -15,7 +15,7 @@ async fn main() {
 
     let (anime_url, anime_name) = get_anime_details(body);
 
-    validate_anime_url(&anime_url, &url_ending);
+    validate_anime_url(anime_url.clone(), &url_ending);
 
     print_anime_list(&anime_name);
 
@@ -50,7 +50,7 @@ fn get_anime_details(body: String) -> (Vec<String>, Vec<String>) {
     (anime_url, anime_name)
 }
 
-fn validate_anime_url(anime_url: &Vec<String>, url_ending: &str) {
+fn validate_anime_url(anime_url: Vec<String>, url_ending: &str) {
     if anime_url.is_empty() {
         error_print(&format!("No anime found with the name: {}", url_ending));
         exit(1);
