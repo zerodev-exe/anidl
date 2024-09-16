@@ -84,16 +84,17 @@ pub async fn get_anime_episodes_and_download_the_episodes(
     login(&client, &csrf_token).await?;
 
     let mut episode_number: u32 = 1;
-    let mut tasks = vec![];
 
+    let mut tasks = vec![];
     let semaphore = Arc::new(Semaphore::new(4));
+
+    let videos_dir = dirs::video_dir()
+        .ok_or("Could not find the Videos directory")
+        .unwrap();
+    let full_path = videos_dir.join("Anime").join(path);
 
     loop {
         let anime_episode = format!("EP-{:03}.mp4", episode_number);
-        let videos_dir = dirs::video_dir()
-            .ok_or("Could not find the Videos directory")
-            .unwrap();
-        let full_path = videos_dir.join("Anime").join(path);
         let full_file_path = full_path.join(anime_episode);
 
         if process_existing_file(full_file_path.to_str().unwrap())? {
@@ -111,7 +112,7 @@ pub async fn get_anime_episodes_and_download_the_episodes(
         let task = create_download_task(
             semaphore.clone(),
             episode_url,
-            path.to_string(),
+            full_path.to_str().unwrap().to_string(),
             episode_number,
         )
         .await;
@@ -130,7 +131,7 @@ pub async fn get_anime_episodes_and_download_the_episodes(
     Ok(())
 }
 
-async fn send_to_downloader(
+async fn download_episode(
     episode_url: String,
     path: String,
     episode_number: u32,
@@ -209,7 +210,7 @@ async fn create_download_task(
     let path_clone = path.clone();
     task::spawn(async move {
         let _permit = permit; // This ensures the semaphore is released when the task completes
-        send_to_downloader(episode_url, path_clone, episode_number).await
+        download_episode(episode_url, path_clone, episode_number).await
     })
 }
 
