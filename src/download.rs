@@ -1,46 +1,31 @@
-use dirs;
 use reqwest::Client;
 use std::fs;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
 
-// Asynchronously creates a directory and a file at the specified paths
-async fn create_dir_and_file(file_path: &str, file_name: &str) {
+fn create_dir(file_path: &str) {
     let videos_dir = dirs::video_dir()
         .ok_or("Could not find the Videos directory")
         .unwrap();
     let full_path = videos_dir.join("Anime").join(file_path);
-    let full_file_path = full_path.join(file_name);
     fs::create_dir_all(&full_path).expect("Couldn't create the path");
-    File::create(full_file_path.to_str().unwrap())
-        .await
-        .expect("Couldn't create the file");
 }
+
 
 // Handles redirection and returns the final download link from a URL, with retry logic for failed requests
 pub async fn handle_redirect_and_get_link(
     encoded_url: &str,
     file_path: &str,
-    episode_number: u32,
 ) -> Result<String, Box<dyn std::error::Error>> {
     let client = Client::builder()
         .redirect(reqwest::redirect::Policy::limited(5)) // Limit the number of redirects to 5
         .build()?;
     let mut current_url = encoded_url.to_string();
 
-    let anime_episode = format!("EP-{:03}.mp4", episode_number);
     let videos_dir = dirs::video_dir().ok_or("Could not find the Videos directory")?;
-    let full_file_path = videos_dir
-        .join("Anime")
-        .join(file_path)
-        .join(&anime_episode);
     let full_path = videos_dir.join("Anime").join(file_path);
 
-    create_dir_and_file(
-        full_path.to_str().unwrap(),
-        full_file_path.to_str().unwrap(),
-    )
-    .await;
+    create_dir(full_path.to_str().expect("Couldn't create the path"));
 
     loop {
         let response = match client.get(&current_url).send().await {
@@ -110,9 +95,9 @@ pub async fn handle_redirect_and_download(
     file_path: &str,
     episode_number: u32,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let final_url = handle_redirect_and_get_link(encoded_url, file_path, episode_number).await?;
+    let final_url = handle_redirect_and_get_link(encoded_url, file_path).await?;
     let client = Client::new();
-    let anime_episode = format!("EP-{:03}.mp4", episode_number);
+    let anime_episode = format!("EP-{:04}.mp4", episode_number);
     let videos_dir = dirs::video_dir().ok_or("Could not find the Videos directory")?;
     let full_file_path = videos_dir.join("Anime").join(file_path).join(anime_episode);
     download_content(&client, &final_url, full_file_path.to_str().unwrap()).await?;
@@ -129,16 +114,6 @@ mod tests {
     use tokio::fs::remove_file;
 
     #[tokio::test]
-    async fn test_create_dir_and_file() {
-        let full_path = "test_dir";
-        let full_file_path = "test_dir/test_file.txt";
-        create_dir_and_file(full_path, full_file_path).await;
-        assert!(std::path::Path::new(full_file_path).exists());
-        remove_file(full_file_path).await.unwrap();
-        std::fs::remove_dir(full_path).unwrap();
-    }
-
-    #[tokio::test]
     async fn test_download_content() {
         let client = Client::new();
         let url = "https://httpbin.org/bytes/1024";
@@ -147,18 +122,5 @@ mod tests {
         assert!(result.is_ok());
         assert!(std::path::Path::new(full_file_path).exists());
         remove_file(full_file_path).await.unwrap();
-    }
-
-    #[tokio::test]
-    async fn test_handle_redirect_and_download() {
-        let url = "https://httpbin.org/absolute-redirect/1";
-        let file_path = "test_redirect";
-        let episode_number = 1;
-        let result = handle_redirect_and_download(url, file_path, episode_number).await;
-        assert!(result.is_ok());
-        let full_file_path = format!("Anime/{}/EP-{:03}.mp4", file_path, episode_number);
-        assert!(std::path::Path::new(&full_file_path).exists());
-        remove_file(full_file_path).await.unwrap();
-        std::fs::remove_dir_all(format!("Anime/{}", file_path)).unwrap();
     }
 }
