@@ -2,6 +2,7 @@ use crate::download;
 use crate::parser;
 use crate::URL;
 use futures::future::join_all;
+use scraper::{Html, Selector};
 use std::sync::Arc;
 use tokio::sync::Semaphore;
 use tokio::task;
@@ -44,8 +45,8 @@ impl HttpClient for reqwest::Client {
 // Function to retrieve CSRF token from the login page
 async fn get_csrf_token<T: HttpClient>(client: &T) -> Result<String, Box<dyn std::error::Error>> {
     let login_page = client.get(&format!("{}{}", URL, "login.html")).await?;
-    let document = scraper::Html::parse_document(&login_page);
-    let selector = scraper::Selector::parse("meta[name='csrf-token']")?;
+    let document = Html::parse_document(&login_page);
+    let selector = Selector::parse("meta[name='csrf-token']")?;
     let csrf_token = document
         .select(&selector)
         .next()
@@ -215,9 +216,9 @@ async fn create_download_task(
 }
 
 // Main function to fetch anime episodes
-pub async fn get_anime_episodes(
+pub async fn get_how_many_episodes_are_there(
     anime_url_ending: String,
-) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+) -> Result<usize, Box<dyn std::error::Error>> {
     let client = initialize_client();
 
     fetch_login_page(&client).await?;
@@ -231,7 +232,7 @@ pub async fn get_anime_episodes(
     loop {
         let episode_url = format!("{}/{}-episode-{}", URL, anime_url_ending, episode_number);
 
-        let response = reqwest::get(&episode_url).await?;
+        let response = client.get(&episode_url).send().await?;
         if response.status() != reqwest::StatusCode::OK {
             break;
         }
@@ -241,5 +242,5 @@ pub async fn get_anime_episodes(
         episode_number += 1;
     }
 
-    Ok(episode_urls)
+    Ok(episode_urls.len())
 }
