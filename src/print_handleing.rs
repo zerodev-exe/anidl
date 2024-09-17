@@ -18,6 +18,14 @@ pub fn success_print(message: &str) {
     );
 }
 
+/// Prints an error message with a timestamp.
+pub fn info_print(message: &str) {
+    let current_time = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+    let error_string = "[!]".cyan();
+    println!("{error_string} {} {}", current_time.cyan(), message.cyan());
+}
+
+
 /// Prints the list of anime names with their corresponding numbers.
 pub fn print_anime_list(anime_name: &[String]) {
     for (index, name) in anime_name.iter().enumerate() {

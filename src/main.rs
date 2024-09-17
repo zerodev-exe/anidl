@@ -1,4 +1,5 @@
-use gogoanime_scraper::{input_handler, parser, scraper, utils, SEACH_URL};
+use gogoanime_scraper::{input_handler, parser, utils, SEACH_URL};
+mod scrapertui;
 mod print_handleing;
 use print_handleing::*;
 use std::process::exit;
@@ -19,10 +20,10 @@ async fn main() {
 
     print_anime_list(&anime_name);
 
-    let (chosen_anime, _path) = get_chosen_anime(&anime_name);
+    let (chosen_anime, path) = get_chosen_anime(&anime_name);
     let anime_url_ending = get_anime_url_ending(anime_url, chosen_anime);
 
-    match scraper::get_anime_episodes_and_download_the_episodes(anime_url_ending, &_path).await {
+    match scrapertui::get_anime_episodes_and_download_the_episodes(anime_url_ending, &path).await {
         Ok(_) => success_print("Successfully downloaded all of the episodes"),
         Err(_) => error_print("Failed to download all of the episodes"),
     }
