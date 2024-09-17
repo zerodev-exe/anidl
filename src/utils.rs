@@ -19,6 +19,11 @@ pub fn clear_terminal_screen() {
     }
 }
 
+fn execute_command(command: &str, args: &[&str]) -> Result<(), std::io::Error> {
+    Command::new(command).args(args).spawn()?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -29,9 +34,4 @@ mod tests {
         let result = get_html(url).await;
         assert!(result.is_ok());
     }
-}
-
-fn execute_command(command: &str, args: &[&str]) -> Result<(), std::io::Error> {
-    Command::new(command).args(args).spawn()?;
-    Ok(())
 }
