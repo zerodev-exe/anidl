@@ -1,7 +1,7 @@
-use gogoanime_scraper::download;
-use gogoanime_scraper::URL;
-use gogoanime_scraper::parser;
 use futures::future::join_all;
+use gogoanime_scraper::download;
+use gogoanime_scraper::parser;
+use gogoanime_scraper::URL;
 use scraper::{Html, Selector};
 use std::sync::Arc;
 use tokio::sync::Semaphore;
@@ -143,7 +143,9 @@ async fn download_episode(
     let mut retry_count = 0;
     let max_retries = 5;
 
-    info_print(&format!("Starting the download on episode {episode_number}"));
+    info_print(&format!(
+        "Starting the download on episode {episode_number}"
+    ));
 
     loop {
         let authenticated_content = client.get(&episode_url).send().await?.text().await?;
@@ -164,7 +166,10 @@ async fn download_episode(
 
         match download::handle_redirect_and_download(encoded_url, &path, episode_number).await {
             Ok(_) => {
-                success_print(&format!("Successfully downloaded episode {}", episode_number));
+                success_print(&format!(
+                    "Successfully downloaded episode {}",
+                    episode_number
+                ));
                 break; // Break the loop after a successful download
             }
             Err(_) => {

@@ -25,7 +25,6 @@ pub fn info_print(message: &str) {
     println!("{error_string} {} {}", current_time.cyan(), message.cyan());
 }
 
-
 /// Prints the list of anime names with their corresponding numbers.
 pub fn print_anime_list(anime_name: &[String]) {
     for (index, name) in anime_name.iter().enumerate() {
