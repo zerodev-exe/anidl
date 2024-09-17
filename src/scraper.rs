@@ -180,7 +180,7 @@ async fn download_episode(
 
 async fn fetch_login_page(client: &reqwest::Client) -> Result<(), reqwest::Error> {
     client
-        .get(&format!("{}{}", URL, "login.html"))
+        .get(format!("{}{}", URL, "login.html"))
         .send()
         .await?;
     Ok(())
