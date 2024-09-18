@@ -96,6 +96,17 @@ pub fn get_total_number_of_episodes(body: String) -> Result<u32, Box<dyn std::er
     Err("An error has occurred".into())
 }
 
+pub fn is_anime_ongoing(body: &str) -> bool {
+    let document = scraper::Html::parse_document(body);
+    let ongoing_selector = scraper::Selector::parse("div.anime_info_body_bg p.type a").unwrap();
+    let ongoing_string = "ongoing";
+    let is_ongoing = document
+        .select(&ongoing_selector)
+        .any(|x| x.inner_html().to_lowercase().contains(ongoing_string));
+
+    is_ongoing
+}
+
 fn parse_document(body: &str) -> Document {
     Document::from(body)
 }
