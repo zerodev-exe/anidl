@@ -75,8 +75,8 @@ pub fn get_anime_images(body: String) -> Vec<String> {
     anime_list
 }
 
-fn parse_document(body: &String) -> Document {
-    Document::from(body.as_str())
+fn parse_document(body: &str) -> Document {
+    Document::from(body)
 }
 
 fn find_nodes<'a>(document: &'a Document, selector: &'a str) -> Vec<Node<'a>> {
