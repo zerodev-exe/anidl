@@ -1,4 +1,5 @@
-use gogoanime_scraper::{input_handler, parser, utils, SEACH_URL};
+use colored::*;
+use gogoanime_scraper::{input_handler, parser, utils, SEACH_URL, CAT_URL};
 mod print_handleing;
 mod scrapertui;
 use print_handleing::*;
@@ -10,7 +11,7 @@ async fn main() {
     let url_ending = get_url_ending(args);
     let scraper_url_base = get_scraper_url_base(&url_ending);
 
-    let body = fetch_html_body(scraper_url_base)
+    let body = utils::get_html(scraper_url_base)
         .await
         .expect("Failed to retrieve HTML content");
 
@@ -22,6 +23,21 @@ async fn main() {
 
     let (chosen_anime, path) = get_chosen_anime(&anime_name);
     let anime_url_ending = get_anime_url_ending(anime_url, chosen_anime);
+
+    // ======================= Printing the amount of episodes
+
+    let url = format!("{CAT_URL}{anime_url_ending}");
+    let body = utils::get_html(url)
+        .await
+        .expect("Check your internet connection");
+    let string = format!(
+        "Downloading all {} episodes",
+        parser::get_total_number_of_episodes(body).unwrap()
+    )
+    .yellow();
+    println!("{}", string);
+
+    // ======================= Printing the amount of episodes
 
     match scrapertui::get_anime_episodes_and_download_the_episodes(anime_url_ending, &path).await {
         Ok(_) => success_print("Successfully downloaded all of the episodes"),
