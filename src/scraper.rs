@@ -1,6 +1,6 @@
 use crate::download;
 use crate::parser;
-use crate::URL;
+use crate::{CAT_URL, URL};
 use futures::future::join_all;
 use scraper::{Html, Selector};
 use std::sync::Arc;
@@ -96,9 +96,9 @@ pub async fn get_anime_episodes_and_download_the_episodes(
 
     loop {
         let anime_episode = format!("EP-{:03}.mp4", episode_number);
-        let full_file_path = full_path.join(anime_episode);
+        let file_path = full_path.join(anime_episode);
 
-        if process_existing_file(full_file_path.to_str().unwrap())? {
+        if process_existing_file(file_path.to_str().unwrap())? {
             episode_number += 1;
             continue;
         }
@@ -107,6 +107,19 @@ pub async fn get_anime_episodes_and_download_the_episodes(
 
         let response = reqwest::get(&episode_url).await?;
         if response.status() != reqwest::StatusCode::OK {
+            let body = reqwest::get(format!("{CAT_URL}{anime_url_ending}"))
+                .await
+                .unwrap()
+                .text()
+                .await
+                .unwrap();
+
+            let tmp_anime_episode = format!("EP-{:03}.mp4.tmp", episode_number);
+            let tmp_file_path = full_path.join(tmp_anime_episode);
+
+            if parser::is_anime_ongoing(&body) {
+                let _ = std::fs::File::create(tmp_file_path);
+            }
             break;
         }
 
