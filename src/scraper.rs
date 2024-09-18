@@ -62,7 +62,7 @@ async fn login<T: HttpClient>(
 ) -> Result<(), Box<dyn std::error::Error>> {
     client
         .post(
-            &format!("{}{}", URL, "login.html"),
+            &format!("{URL}{}", "login.html"),
             &[
                 ("email", "ritosis807@exeneli.com"),
                 ("password", "'%dWU}ZdBJ8LzAy"),
@@ -103,7 +103,7 @@ pub async fn get_anime_episodes_and_download_the_episodes(
             continue;
         }
 
-        let episode_url = format!("{}/{}-episode-{}", URL, anime_url_ending, episode_number);
+        let episode_url = format!("{URL}/{}-episode-{}", anime_url_ending, episode_number);
 
         let response = reqwest::get(&episode_url).await?;
         if response.status() != reqwest::StatusCode::OK {
