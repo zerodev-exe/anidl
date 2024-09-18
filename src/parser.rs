@@ -54,7 +54,7 @@ pub fn get_anime_name(body: String) -> Vec<String> {
 pub fn get_media_url(body: String) -> Vec<String> {
     let mut anime_list: Vec<_> = vec![];
 
-    let document = Document::from(body.as_str());
+    let document = parse_document(&body);
     for node in document.find(Attr("class", "cf-download").descendant(Name("a"))) {
         anime_list.push(node.attr("href").unwrap().to_string());
     }
@@ -65,7 +65,7 @@ pub fn get_media_url(body: String) -> Vec<String> {
 pub fn get_anime_images(body: String) -> Vec<String> {
     let mut anime_list: Vec<String> = vec![];
 
-    let document = Document::from(body.as_str());
+    let document = parse_document(&body);
     for node in document.find(Attr("class", "img").descendant(Name("img"))) {
         if let Some(src) = node.attr("src") {
             anime_list.push(src.to_string());
@@ -75,8 +75,8 @@ pub fn get_anime_images(body: String) -> Vec<String> {
     anime_list
 }
 
-fn parse_document(body: &str) -> Document {
-    Document::from(body)
+fn parse_document(body: &String) -> Document {
+    Document::from(body.as_str())
 }
 
 fn find_nodes<'a>(document: &'a Document, selector: &'a str) -> Vec<Node<'a>> {
