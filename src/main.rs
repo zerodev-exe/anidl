@@ -1,5 +1,5 @@
 use colored::*;
-use gogoanime_scraper::{input_handler, parser, utils, SEACH_URL, CAT_URL};
+use gogoanime_scraper::{input_handler, parser, utils, CAT_URL, SEACH_URL};
 mod print_handleing;
 mod scrapertui;
 use print_handleing::*;
