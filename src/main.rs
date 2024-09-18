@@ -41,12 +41,6 @@ fn get_scraper_url_base(url_ending: &str) -> String {
     format!("{}{}", SEACH_URL, url_ending)
 }
 
-async fn fetch_html_body(scraper_url_base: String) -> Result<String, reqwest::Error> {
-    Ok(utils::get_html(scraper_url_base)
-        .await
-        .expect("You should check your connection"))
-}
-
 fn get_anime_details(body: String) -> (Vec<String>, Vec<String>) {
     let anime_url = parser::get_anime_url(body.clone());
     let anime_name = parser::get_anime_name(body);
