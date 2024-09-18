@@ -1,6 +1,6 @@
 use gogoanime_scraper::{input_handler, parser, utils, SEACH_URL};
-mod scrapertui;
 mod print_handleing;
+mod scrapertui;
 use print_handleing::*;
 use std::process::exit;
 
@@ -42,7 +42,9 @@ fn get_scraper_url_base(url_ending: &str) -> String {
 }
 
 async fn fetch_html_body(scraper_url_base: String) -> Result<String, reqwest::Error> {
-    utils::get_html(scraper_url_base).await
+    Ok(utils::get_html(scraper_url_base)
+        .await
+        .expect("You should check your connection"))
 }
 
 fn get_anime_details(body: String) -> (Vec<String>, Vec<String>) {
