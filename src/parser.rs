@@ -75,6 +75,27 @@ pub fn get_anime_images(body: String) -> Vec<String> {
     anime_list
 }
 
+pub fn get_total_number_of_episodes(body: String) -> Result<u32, Box<dyn std::error::Error>> {
+    let document = scraper::Html::parse_document(&body);
+    let episode_selector = scraper::Selector::parse("div.anime_video_body>ul li a").unwrap();
+
+    let last_episde = document.select(&episode_selector);
+
+    let first_episode = last_episde.last(); // Get the first item
+
+    if let Some(episode) = first_episode {
+        return Ok(episode
+            .inner_html()
+            .split("-")
+            .last()
+            .expect("An error has ocured")
+            .parse::<u32>()
+            .unwrap());
+    }
+
+    Err("An error has occurred".into())
+}
+
 fn parse_document(body: &str) -> Document {
     Document::from(body)
 }
