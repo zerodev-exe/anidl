@@ -109,8 +109,7 @@ fn find_nodes<'a>(document: &'a Document, selector: &'a str) -> Vec<Node<'a>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils;
-    use crate::URL;
+    use crate::{utils, CAT_URL, URL};
     use tokio;
 
     /// Tests the `get_anime_url` function.
@@ -147,5 +146,26 @@ mod tests {
         let body = "".to_string();
         let urls = get_anime_url(body);
         assert!(urls.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_get_total_number_of_episodes_kaijuu8() {
+        let body = utils::get_html(format!("{CAT_URL}kaijuu-8-gou-dub"))
+            .await
+            .unwrap();
+        assert_eq!(get_total_number_of_episodes(body).unwrap(), 12)
+    }
+    #[tokio::test]
+    async fn test_get_total_number_of_episodes_one_piece() {
+        let body = utils::get_html(format!("{CAT_URL}one-piece"))
+            .await
+            .unwrap();
+        assert_eq!(get_total_number_of_episodes(body).unwrap(), 1119)
+    }
+
+    #[tokio::test]
+    async fn test_get_total_number_of_episodes_bleach() {
+        let body = utils::get_html(format!("{CAT_URL}bleach")).await.unwrap();
+        assert_eq!(get_total_number_of_episodes(body).unwrap(), 366)
     }
 }
