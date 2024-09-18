@@ -6,6 +6,7 @@ pub mod utils;
 
 pub static URL: &str = "https://anitaku.pe/";
 pub static SEACH_URL: &str = "https://anitaku.pe/search.html?keyword=";
+pub static CAT_URL: &str = "https://anitaku.pe/category/";
 
 /// Get the anime list by name
 ///
