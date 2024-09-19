@@ -95,7 +95,7 @@ pub async fn get_anime_episodes_and_download_the_episodes(
     let full_path = videos_dir.join("Anime").join(path);
 
     loop {
-        let anime_episode = format!("EP-{:03}.mp4", episode_number);
+        let anime_episode = format!("EP-{:04}.mp4", episode_number);
         let file_path = full_path.join(anime_episode);
 
         if process_existing_file(file_path.to_str().unwrap())? {
@@ -114,7 +114,7 @@ pub async fn get_anime_episodes_and_download_the_episodes(
                 .await
                 .unwrap();
 
-            let tmp_anime_episode = format!("EP-{:03}.mp4.tmp", episode_number);
+            let tmp_anime_episode = format!("EP-{:04}.mp4.tmp", episode_number);
             let tmp_file_path = full_path.join(tmp_anime_episode);
 
             if parser::is_anime_ongoing(&body) {
