@@ -75,7 +75,7 @@ pub fn get_anime_images(body: String) -> Vec<String> {
     anime_list
 }
 
-pub fn get_total_number_of_episodes(body: String) -> Result<u32, Box<dyn std::error::Error>> {
+pub fn get_total_number_of_episodes(body: String) -> Result<usize, Box<dyn std::error::Error>> {
     let document = scraper::Html::parse_document(&body);
     let episode_selector = scraper::Selector::parse("div.anime_video_body>ul li a").unwrap();
 
@@ -89,7 +89,7 @@ pub fn get_total_number_of_episodes(body: String) -> Result<u32, Box<dyn std::er
             .split("-")
             .last()
             .expect("An error has ocured")
-            .parse::<u32>()
+            .parse::<usize>()
             .unwrap());
     }
 
