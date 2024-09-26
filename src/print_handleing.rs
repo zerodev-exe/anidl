@@ -32,3 +32,14 @@ pub fn print_anime_list(anime_name: &[String]) {
         println!("{} - {}", num.red(), name);
     }
 }
+
+/// Prints a warning message with a timestamp.
+pub fn warning_print(message: &str) {
+    let current_time = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+    let warning_string = "[!]".yellow();
+    println!(
+        "{warning_string} {} {}",
+        current_time.yellow(),
+        message.yellow()
+    );
+}

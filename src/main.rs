@@ -26,16 +26,7 @@ async fn main() {
 
     // ======================= Printing the amount of episodes
 
-    let url = format!("{CAT_URL}{anime_url_ending}");
-    let body = utils::get_html(url)
-        .await
-        .expect("Check your internet connection");
-    let string = format!(
-        "Downloading all {} episodes",
-        parser::get_total_number_of_episodes(body).unwrap()
-    )
-    .yellow();
-    println!("{}", string);
+    get_warning(anime_url_ending.clone()).await;
 
     // ======================= Printing the amount of episodes
 
@@ -78,4 +69,19 @@ fn get_chosen_anime(anime_name: &[String]) -> (usize, String) {
 
 fn get_anime_url_ending(anime_url: Vec<String>, chosen_anime: usize) -> String {
     anime_url[chosen_anime - 1].clone()
+}
+
+async fn get_warning(anime_url_ending: String) {
+    let url = format!("{CAT_URL}{anime_url_ending}");
+    let body = utils::get_html(url)
+        .await
+        .expect("Check your internet connection");
+    let total_episodes = parser::get_total_number_of_episodes(body.clone()).unwrap();
+    let string = format!("Downloading all {} episodes", total_episodes).yellow();
+
+    if parser::is_anime_ongoing(&body) {
+        warning_print("The anime is ongoing");
+    }
+
+    println!("{}", string);
 }
