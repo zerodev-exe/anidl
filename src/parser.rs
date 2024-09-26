@@ -166,13 +166,6 @@ mod tests {
             .unwrap();
         assert_eq!(get_total_number_of_episodes(body).unwrap(), 12)
     }
-    #[tokio::test]
-    async fn test_get_total_number_of_episodes_one_piece() {
-        let body = utils::get_html(format!("{CAT_URL}one-piece"))
-            .await
-            .unwrap();
-        assert_eq!(get_total_number_of_episodes(body).unwrap(), 1119)
-    }
 
     #[tokio::test]
     async fn test_get_total_number_of_episodes_bleach() {
