@@ -4,9 +4,9 @@ pub mod parser;
 pub mod scraper;
 pub mod utils;
 
-pub static URL: &str = "https://anitaku.pe/";
-pub static SEACH_URL: &str = "https://anitaku.pe/search.html?keyword=";
-pub static CAT_URL: &str = "https://anitaku.pe/category/";
+pub static URL: &str = "https://anitaku.bz/";
+pub static SEARCH_URL: &str = "https://anitaku.bz/search.html?keyword=";
+pub static CAT_URL: &str = "https://anitaku.bz/category/";
 
 /// Get the anime list by name
 ///
@@ -19,7 +19,7 @@ pub static CAT_URL: &str = "https://anitaku.pe/category/";
 /// A tuple containing the anime URL and the anime name
 pub async fn get_anime_list_by_name(anime_name: String) -> (Vec<String>, Vec<String>, Vec<String>) {
     let trimmed_name = input_handler::trim(anime_name);
-    let url = format!("{}{}", SEACH_URL, trimmed_name);
+    let url = format!("{}{}", SEARCH_URL, trimmed_name);
     let body = utils::get_html(url)
         .await
         .expect("An error has occured, please verify if you are connected to the internet");

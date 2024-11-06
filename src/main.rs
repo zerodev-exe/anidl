@@ -1,5 +1,5 @@
 use colored::*;
-use gogoanime_scraper::{input_handler, parser, utils, CAT_URL, SEACH_URL};
+use gogoanime_scraper::{input_handler, parser, utils, CAT_URL, SEARCH_URL};
 mod print_handleing;
 mod scrapertui;
 use print_handleing::*;
@@ -45,7 +45,7 @@ fn get_url_ending(args: Vec<String>) -> String {
 }
 
 fn get_scraper_url_base(url_ending: &str) -> String {
-    format!("{}{}", SEACH_URL, url_ending)
+    format!("{}{}", SEARCH_URL, url_ending)
 }
 
 fn get_anime_details(body: String) -> (Vec<String>, Vec<String>) {
