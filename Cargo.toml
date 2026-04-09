@@ -9,7 +9,7 @@ repository = "https://github.com/zerodev-exe/gogoanime-scraper"
 [dependencies]
 tokio = { version = "1", features = ["full"] }
 reqwest = { version = "0.12", features = ["cookies", "blocking", "json"] }
-colored = "2.2.0"
+colored = "3.1.1"
 chrono = "0.4.39"
 indicatif = "0.17.9"
 async-trait = "0.1.85"
