@@ -3,10 +3,8 @@ pub mod input_handler;
 pub mod parser;
 pub mod scraper;
 pub mod utils;
+pub mod allanime;
 
-pub static URL: &str = "https://anitaku.bz/";
-pub static SEARCH_URL: &str = "https://anitaku.bz/search.html?keyword=";
-pub static CAT_URL: &str = "https://anitaku.bz/category/";
 
 /// Get the anime list by name
 ///
@@ -19,11 +17,16 @@ pub static CAT_URL: &str = "https://anitaku.bz/category/";
 /// A tuple containing the anime URL and the anime name
 pub async fn get_anime_list_by_name(anime_name: String) -> (Vec<String>, Vec<String>, Vec<String>) {
     let trimmed_name = input_handler::trim(anime_name);
-    let url = format!("{}{}", SEARCH_URL, trimmed_name);
-    let body = utils::get_html(url)
+    let results = allanime::search_anime(&trimmed_name.replace("%20", " "), "sub")
         .await
-        .expect("An error has occured, please verify if you are connected to the internet");
-    get_anime_info(body)
+        .unwrap_or_default();
+    let mut urls = Vec::new();
+    let mut names = Vec::new();
+    for result in results {
+        urls.push(result.id);
+        names.push(result.name);
+    }
+    (urls, names, Vec::new())
 }
 
 pub fn get_anime_info(body: String) -> (Vec<String>, Vec<String>, Vec<String>) {

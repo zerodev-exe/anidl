@@ -1,5 +1,5 @@
 use colored::*;
-use gogoanime_scraper::{input_handler, parser, utils, CAT_URL, SEARCH_URL};
+use gogoanime_scraper::{allanime, input_handler};
 mod print_handleing;
 mod scrapertui;
 use print_handleing::*;
@@ -9,13 +9,7 @@ use std::process::exit;
 async fn main() {
     let args: Vec<String> = std::env::args().collect();
     let url_ending = get_url_ending(args);
-    let scraper_url_base = get_scraper_url_base(&url_ending);
-
-    let body = utils::get_html(scraper_url_base)
-        .await
-        .expect("Failed to retrieve HTML content");
-
-    let (anime_url, anime_name) = get_anime_details(body);
+    let (anime_url, anime_name) = get_anime_details(url_ending.clone()).await;
 
     validate_anime_url(anime_url.clone(), &url_ending);
 
@@ -44,14 +38,18 @@ fn get_url_ending(args: Vec<String>) -> String {
     }
 }
 
-fn get_scraper_url_base(url_ending: &str) -> String {
-    format!("{}{}", SEARCH_URL, url_ending)
-}
-
-fn get_anime_details(body: String) -> (Vec<String>, Vec<String>) {
-    let anime_url = parser::get_anime_url(body.clone());
-    let anime_name = parser::get_anime_name(body);
-    (anime_url, anime_name)
+async fn get_anime_details(query: String) -> (Vec<String>, Vec<String>) {
+    let cleaned = query.replace("%20", " ");
+    let results = allanime::search_anime(&cleaned, "sub")
+        .await
+        .unwrap_or_default();
+    let mut ids = Vec::new();
+    let mut names = Vec::new();
+    for result in results {
+        ids.push(result.id);
+        names.push(result.name);
+    }
+    (ids, names)
 }
 
 fn validate_anime_url(anime_url: Vec<String>, url_ending: &str) {
@@ -72,16 +70,10 @@ fn get_anime_url_ending(anime_url: Vec<String>, chosen_anime: usize) -> String {
 }
 
 async fn get_warning(anime_url_ending: String) {
-    let url = format!("{CAT_URL}{anime_url_ending}");
-    let body = utils::get_html(url)
+    let episodes = allanime::episodes_list(&anime_url_ending, "sub")
         .await
-        .expect("Check your internet connection");
-    let total_episodes = parser::get_total_number_of_episodes(body.clone()).unwrap();
+        .unwrap_or_default();
+    let total_episodes = episodes.len();
     let string = format!("Downloading all {} episodes", total_episodes).yellow();
-
-    if parser::is_anime_ongoing(&body) {
-        warning_print("The anime is ongoing");
-    }
-
     println!("{}", string);
 }

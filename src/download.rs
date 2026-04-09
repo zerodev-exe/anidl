@@ -15,10 +15,18 @@ fn create_dir(file_path: &str) {
 pub async fn handle_redirect_and_get_link(
     encoded_url: &str,
     file_path: &str,
+    referer: Option<&str>,
 ) -> Result<String, Box<dyn std::error::Error>> {
-    let client = Client::builder()
-        .redirect(reqwest::redirect::Policy::limited(5)) // Limit the number of redirects to 5
-        .build()?;
+    let mut builder = Client::builder().redirect(reqwest::redirect::Policy::limited(5));
+    if let Some(referer) = referer {
+        let mut headers = reqwest::header::HeaderMap::new();
+        headers.insert(
+            reqwest::header::REFERER,
+            reqwest::header::HeaderValue::from_str(referer)?,
+        );
+        builder = builder.default_headers(headers);
+    }
+    let client = builder.build()?;
     let mut current_url = encoded_url.to_string();
 
     let videos_dir = dirs::video_dir().ok_or("Could not find the Videos directory")?;
@@ -93,9 +101,19 @@ pub async fn handle_redirect_and_download(
     encoded_url: &str,
     file_path: &str,
     episode_number: u32,
+    referer: Option<&str>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let final_url = handle_redirect_and_get_link(encoded_url, file_path).await?;
-    let client = Client::new();
+    let final_url = handle_redirect_and_get_link(encoded_url, file_path, referer).await?;
+    let mut builder = Client::builder();
+    if let Some(referer) = referer {
+        let mut headers = reqwest::header::HeaderMap::new();
+        headers.insert(
+            reqwest::header::REFERER,
+            reqwest::header::HeaderValue::from_str(referer)?,
+        );
+        builder = builder.default_headers(headers);
+    }
+    let client = builder.build()?;
     let anime_episode = format!("EP-{:04}.mp4", episode_number);
     let videos_dir = dirs::video_dir().ok_or("Could not find the Videos directory")?;
     let full_file_path = videos_dir.join("Anime").join(file_path).join(anime_episode);

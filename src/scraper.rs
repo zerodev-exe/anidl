@@ -1,91 +1,14 @@
+use crate::allanime;
 use crate::download;
-use crate::parser;
-use crate::{CAT_URL, URL};
 use futures::future::join_all;
-use scraper::{Html, Selector};
 use std::sync::Arc;
 use tokio::sync::Semaphore;
 use tokio::task;
 
-// Lazy initialization of a shared HTTP client with cookie support
-lazy_static::lazy_static! {
-    static ref CLIENT: reqwest::Client = reqwest::Client::builder()
-        .cookie_store(true)
-        .build()
-        .unwrap();
-}
-
-// Trait defining the HTTP client operations
-trait HttpClient {
-    async fn get(&self, url: &str) -> Result<String, Box<dyn std::error::Error>>;
-    async fn post(
-        &self,
-        url: &str,
-        form: &[(&str, &str)],
-    ) -> Result<(), Box<dyn std::error::Error>>;
-}
-
-// Implementation of the HttpClient trait for reqwest::Client
-impl HttpClient for reqwest::Client {
-    async fn get(&self, url: &str) -> Result<String, Box<dyn std::error::Error>> {
-        let response = self.get(url).send().await?.text().await?;
-        Ok(response)
-    }
-
-    async fn post(
-        &self,
-        url: &str,
-        form: &[(&str, &str)],
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        self.post(url).form(form).send().await?;
-        Ok(())
-    }
-}
-
-// Function to retrieve CSRF token from the login page
-async fn get_csrf_token<T: HttpClient>(client: &T) -> Result<String, Box<dyn std::error::Error>> {
-    let login_page = client.get(&format!("{}{}", URL, "login.html")).await?;
-    let document = Html::parse_document(&login_page);
-    let selector = Selector::parse("meta[name='csrf-token']")?;
-    let csrf_token = document
-        .select(&selector)
-        .next()
-        .and_then(|element| element.value().attr("content"))
-        .ok_or("CSRF token not found")?;
-    Ok(csrf_token.to_string())
-}
-
-// Function to perform login using the CSRF token
-async fn login<T: HttpClient>(
-    client: &T,
-    csrf_token: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
-    client
-        .post(
-            &format!("{URL}{}", "login.html"),
-            &[
-                ("email", "ritosis807@exeneli.com"),
-                ("password", "'%dWU}ZdBJ8LzAy"),
-                ("_csrf", csrf_token),
-            ],
-        )
-        .await?;
-    Ok(())
-}
-
-// Main function to fetch anime episodes
 pub async fn get_anime_episodes_and_download_the_episodes(
     anime_url_ending: String,
     path: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let client = initialize_client();
-
-    fetch_login_page(&client).await?;
-    let csrf_token = get_csrf_token(&client).await?;
-    login(&client, &csrf_token).await?;
-
-    let mut episode_number: u32 = 1;
-
     let mut tasks = vec![];
     let semaphore = Arc::new(Semaphore::new(4));
 
@@ -94,71 +17,104 @@ pub async fn get_anime_episodes_and_download_the_episodes(
         .unwrap();
     let full_path = videos_dir.join("Anime").join(path);
 
-    loop {
+    let episodes = allanime::episodes_list(&anime_url_ending, "sub").await?;
+    if episodes.is_empty() {
+        return Err("No episodes found for the selected show".into());
+    }
+
+    for (index, episode_str) in episodes.iter().enumerate() {
+        let episode_number = (index as u32) + 1;
         let anime_episode = format!("EP-{:04}.mp4", episode_number);
         let file_path = full_path.join(anime_episode);
 
         if process_existing_file(file_path.to_str().unwrap())? {
-            episode_number += 1;
             continue;
-        }
-
-        let episode_url = format!("{URL}/{}-episode-{}", anime_url_ending, episode_number);
-
-        let response = reqwest::get(&episode_url).await?;
-        if response.status() != reqwest::StatusCode::OK {
-            let body = reqwest::get(format!("{CAT_URL}{anime_url_ending}"))
-                .await
-                .unwrap()
-                .text()
-                .await
-                .unwrap();
-
-            let tmp_anime_episode = format!("EP-{:04}.mp4.tmp", episode_number);
-            let tmp_file_path = full_path.join(tmp_anime_episode);
-
-            if parser::is_anime_ongoing(&body) {
-                let _ = std::fs::File::create(tmp_file_path);
-            }
-            break;
         }
 
         let task = create_download_task(
             semaphore.clone(),
-            episode_url,
+            anime_url_ending.clone(),
+            episode_str.clone(),
             full_path.to_str().unwrap().to_string(),
             episode_number,
         )
         .await;
         tasks.push(task);
-
-        episode_number += 1;
     }
 
     let results = join_all(tasks).await;
+    let mut first_error: Option<Box<dyn std::error::Error + Send + Sync>> = None;
     for result in results {
-        if let Err(e) = result {
-            println!("Error downloading episode: {}", e);
+        match result {
+            Ok(Ok(())) => {}
+            Ok(Err(e)) => {
+                println!("Error downloading episode: {}", e);
+                if first_error.is_none() {
+                    first_error = Some(e);
+                }
+            }
+            Err(e) => {
+                println!("Error downloading episode task: {}", e);
+                if first_error.is_none() {
+                    first_error = Some(Box::new(e));
+                }
+            }
         }
+    }
+
+    if let Some(err) = first_error {
+        return Err(err);
     }
 
     Ok(())
 }
 
 async fn download_episode(
-    episode_url: String,
+    show_id: String,
+    episode_str: String,
     path: String,
     episode_number: u32,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let client = CLIENT.clone();
     let mut retry_count = 0;
     let max_retries = 5;
 
     loop {
-        let authenticated_content = client.get(&episode_url).send().await?.text().await?;
-        let video_urls = parser::get_media_url(authenticated_content);
-        let encoded_url = match video_urls.last() {
-            Some(url) => url,
+        let links = match allanime::episode_links(&show_id, "sub", &episode_str).await {
+            Ok(links) => links,
+            Err(_) => {
+                if retry_count >= max_retries {
+                    return Err(Box::new(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        "No video URL found after multiple retries",
+                    )));
+                }
+                retry_count += 1;
+                continue;
+            }
+        };
+
+        let has_non_m3u8 = links.iter().any(|link| !link.is_m3u8);
+        let filtered_links = links
+            .into_iter()
+            .filter(|link| !has_non_m3u8 || !link.is_m3u8);
+
+        let mut best = None;
+        for link in filtered_links {
+            if best.is_none() {
+                best = Some(link);
+                continue;
+            }
+            if let Some(current) = &best {
+                let current_quality = current.quality.unwrap_or(0);
+                let new_quality = link.quality.unwrap_or(0);
+                if new_quality > current_quality {
+                    best = Some(link);
+                }
+            }
+        }
+
+        let best = match best {
+            Some(link) => link,
             None => {
                 if retry_count >= max_retries {
                     return Err(Box::new(std::io::Error::new(
@@ -171,9 +127,16 @@ async fn download_episode(
             }
         };
 
-        match download::handle_redirect_and_download(encoded_url, &path, episode_number).await {
+        match download::handle_redirect_and_download(
+            &best.url,
+            &path,
+            episode_number,
+            best.referer.as_deref(),
+        )
+        .await
+        {
             Ok(_) => {
-                break; // Break the loop after a successful download
+                break;
             }
             Err(_) => {
                 if retry_count >= max_retries {
@@ -191,18 +154,6 @@ async fn download_episode(
     Ok(())
 }
 
-async fn fetch_login_page(client: &reqwest::Client) -> Result<(), reqwest::Error> {
-    client
-        .get(format!("{}{}", URL, "login.html"))
-        .send()
-        .await?;
-    Ok(())
-}
-
-fn initialize_client() -> reqwest::Client {
-    CLIENT.clone()
-}
-
 fn process_existing_file(full_file_path: &str) -> Result<bool, Box<dyn std::error::Error>> {
     let path_to_file = std::path::Path::new(full_file_path);
     if path_to_file.exists() {
@@ -216,15 +167,18 @@ fn process_existing_file(full_file_path: &str) -> Result<bool, Box<dyn std::erro
 
 async fn create_download_task(
     semaphore: Arc<Semaphore>,
-    episode_url: String,
+    show_id: String,
+    episode_str: String,
     path: String,
     episode_number: u32,
 ) -> tokio::task::JoinHandle<Result<(), Box<dyn std::error::Error + Send + Sync>>> {
     let permit = semaphore.clone().acquire_owned().await.unwrap();
     let path_clone = path.clone();
+    let show_id_clone = show_id.clone();
+    let episode_clone = episode_str.clone();
     task::spawn(async move {
         let _permit = permit; // This ensures the semaphore is released when the task completes
-        download_episode(episode_url, path_clone, episode_number).await
+        download_episode(show_id_clone, episode_clone, path_clone, episode_number).await
     })
 }
 
@@ -232,28 +186,6 @@ async fn create_download_task(
 pub async fn get_how_many_episodes_are_there(
     anime_url_ending: String,
 ) -> Result<usize, Box<dyn std::error::Error>> {
-    let client = initialize_client();
-
-    fetch_login_page(&client).await?;
-    let csrf_token = get_csrf_token(&client).await?;
-    login(&client, &csrf_token).await?;
-
-    let mut episode_number: u32 = 1;
-
-    let mut episode_urls: Vec<String> = vec![];
-
-    loop {
-        let episode_url = format!("{}/{}-episode-{}", URL, anime_url_ending, episode_number);
-
-        let response = client.get(&episode_url).send().await?;
-        if response.status() != reqwest::StatusCode::OK {
-            break;
-        }
-
-        episode_urls.push(episode_url);
-
-        episode_number += 1;
-    }
-
-    Ok(episode_urls.len())
+    let episodes = allanime::episodes_list(&anime_url_ending, "sub").await?;
+    Ok(episodes.len())
 }
