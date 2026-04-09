@@ -59,19 +59,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts (Linux)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: anidl-ubuntu-latest
           path: dist/linux
 
       - name: Download artifacts (MacOS)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: anidl-macos-latest
           path: dist/macos
 
       - name: Download artifacts (Windows)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: anidl-windows-latest
           path: dist/windows
