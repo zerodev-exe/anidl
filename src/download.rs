@@ -38,10 +38,7 @@ pub async fn handle_redirect_and_get_link(
         let response = match client.get(&current_url).send().await {
             Ok(resp) => resp,
             Err(_) => {
-                return Err(Box::new(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    "HTTP request failed",
-                )));
+                return Err(Box::new(std::io::Error::other("HTTP request failed")));
             }
         };
 
@@ -53,10 +50,7 @@ pub async fn handle_redirect_and_get_link(
                 continue;
             }
         } else if response.status().is_client_error() {
-            return Err(Box::new(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "HTTP request failed",
-            )));
+            return Err(Box::new(std::io::Error::other("HTTP request failed")));
         }
 
         // Return the final URL instead of downloading the content
@@ -89,10 +83,7 @@ async fn download_content(
     if file_size > 0 {
         Ok(())
     } else {
-        Err(Box::new(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "Download failed",
-        )))
+        Err(Box::new(std::io::Error::other("Download failed")))
     }
 }
 
