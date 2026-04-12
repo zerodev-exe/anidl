@@ -88,7 +88,9 @@ async fn download_episode(
             Ok(links) => links,
             Err(_) => {
                 if retry_count >= max_retries {
-                    return Err(Box::new(std::io::Error::other("No video URL found after multiple retries")));
+                    return Err(Box::new(std::io::Error::other(
+                        "No video URL found after multiple retries",
+                    )));
                 }
                 retry_count += 1;
                 continue;
@@ -119,7 +121,9 @@ async fn download_episode(
             Some(link) => link,
             None => {
                 if retry_count >= max_retries {
-                    return Err(Box::new(std::io::Error::other("No video URL found after multiple retries")));
+                    return Err(Box::new(std::io::Error::other(
+                        "No video URL found after multiple retries",
+                    )));
                 }
                 retry_count += 1;
                 continue;
@@ -143,7 +147,9 @@ async fn download_episode(
             }
             Err(_) => {
                 if retry_count >= max_retries {
-                    return Err(Box::new(std::io::Error::other("Failed to handle redirect after multiple retries")));
+                    return Err(Box::new(std::io::Error::other(
+                        "Failed to handle redirect after multiple retries",
+                    )));
                 }
                 retry_count += 1;
                 continue;

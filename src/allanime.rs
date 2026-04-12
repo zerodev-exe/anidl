@@ -99,7 +99,8 @@ pub async fn episodes_list(
     episodes.sort_by(|a, b| {
         let left = parse_episode_number(a);
         let right = parse_episode_number(b);
-        left.partial_cmp(&right).unwrap_or(std::cmp::Ordering::Equal)
+        left.partial_cmp(&right)
+            .unwrap_or(std::cmp::Ordering::Equal)
     });
     Ok(episodes)
 }

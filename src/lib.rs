@@ -1,10 +1,9 @@
+pub mod allanime;
 pub mod download;
 pub mod input_handler;
 pub mod parser;
 pub mod scraper;
 pub mod utils;
-pub mod allanime;
-
 
 /// Get the anime list by name
 ///
