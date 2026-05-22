@@ -15,7 +15,7 @@ indicatif = "0.17.9"
 async-trait = "0.1.85"
 futures = "0.3.30"
 dirs = "6.0.0"
-serde_json = "1.0.135"
+serde_json = "1.0.150"
 
 [lib]
 name = "gogoanime_scraper"
