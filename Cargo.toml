@@ -12,7 +12,7 @@ reqwest = { version = "0.12", features = ["cookies", "blocking", "json"] }
 colored = "2.2.0"
 chrono = "0.4.39"
 indicatif = "0.17.9"
-async-trait = "0.1.85"
+async-trait = "0.1.89"
 futures = "0.3.30"
 dirs = "6.0.0"
 serde_json = "1.0.135"
